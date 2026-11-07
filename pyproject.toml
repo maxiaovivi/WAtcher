@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "watcher-robot"
+version = "0.1.0"
+description = "Efficient-WAM physical action inference with pre-execution safety-head scoring"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "Pillow>=9.4"]
+
+[project.optional-dependencies]
+safety = ["torch>=2.4"]
+wam = ["torch>=2.4", "av>=12", "opencv-python-headless>=4.8", "PyYAML>=6", "einops>=0.7", "safetensors>=0.4", "transformers>=4.45", "diffusers>=0.30", "ftfy>=6", "regex"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+safe-wam = "safe_wam.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.json", "LICENSE*", "NOTICE*", "PROVENANCE*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

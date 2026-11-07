@@ -1,0 +1,8 @@
+{
+  "checkpoint": "/absolute/path/to/07_offline_plus_real/safety-offline-plus-real.pt",
+  "device": "cpu",
+  "profile": "ur5_speedl7_velocity_v1",
+  "example_input": "/absolute/path/to/07_offline_plus_real/example-real.npz",
+  "asset_policy": "User-provided files; no automatic download or new hash computation. Weights are not bundled.",
+  "validation_scope": "Historical UR5 development data only; not independent UR7e or on-robot safety validation."
+}

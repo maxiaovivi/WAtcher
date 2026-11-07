@@ -1,0 +1,19 @@
+{
+  "schema": "safe_wam_ur_assets/v1",
+  "format": "full_action_frozen_video_v1",
+  "task": "pick",
+  "prompt": "pick",
+  "checkpoint_step": 14000,
+  "checkpoint": "../assets/pick/best.pt",
+  "base_checkpoint": "../assets/Efficient-WAM-RT_stage3.pt",
+  "base_config": "../assets/pick/base_config.json",
+  "wan_directory": "../assets/Wan2.2-TI2V-5B",
+  "text_embeddings": "../assets/pick/text-embeddings.pt",
+  "normalization": "../assets/pick/train_only_normalization.json",
+  "camera_shapes": {
+    "external": [720, 1280, 3],
+    "hand": [480, 640, 3],
+    "hand2": [480, 640, 3]
+  },
+  "hand_4_3_to_16_9_canvas": false
+}
