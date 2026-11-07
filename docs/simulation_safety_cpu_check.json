@@ -1,0 +1,61 @@
+{
+  "schema": "watcher_simulation_cpu_equivalence_public/v1",
+  "status": "PASS",
+  "checked_date": "2026-11-08",
+  "reference_delivery": "06_offline",
+  "checkpoint_filename": "safety-offline.pt",
+  "original_checkpoint_schema": "ur5_safety_delivery/v1",
+  "trained_profile": "robotwin_legacy_target14",
+  "same_checkpoint_weights": true,
+  "reference_and_candidate_in_separate_processes": true,
+  "input": {
+    "source": "One previously recorded RoboTwin old_regression training input",
+    "selected_by": "Original train/provenance order; no label or score selection",
+    "video_shape": [1, 1, 3, 3, 128, 128],
+    "state_shape": [1, 1, 14],
+    "action_shape": [1, 16, 14],
+    "original_arrays_exact": true,
+    "state_action_normalization_exact": true,
+    "state_semantics": "Current drive-target proxy, not measured joint positions",
+    "action_timing": "unknown_duration",
+    "control_dt": null,
+    "unknown_mask_and_zero_action_times_preserved": true
+  },
+  "output": {
+    "step_shape": [16],
+    "post_shape": "scalar",
+    "overall_shape": "scalar",
+    "all_scores_finite": true,
+    "probabilities_compared": 18,
+    "max_absolute_error": 0.0,
+    "comparison_atol": 0.0000001,
+    "overall": 0.6343549489974976,
+    "post": 0.6343549489974976,
+    "maximum_step": 0.4826184809207916,
+    "threshold": 0.5,
+    "step_scores_validated": false
+  },
+  "source_comparison": {
+    "method": "Direct byte comparison, not hash verification",
+    "unchanged_numerical_modules": [
+      "adapters.py", "contracts.py", "guard.py", "model.py", "multidomain.py",
+      "runtime.py", "sensor_timing.py", "sequence_timing.py", "temporal_risk.py"
+    ]
+  },
+  "runtime": {
+    "device": "cpu",
+    "threads": 2,
+    "torch": "2.4.1+cu121",
+    "numpy": "1.26.4",
+    "pillow": "12.3.0"
+  },
+  "interface_checks_passed": 3,
+  "labels_used": false,
+  "file_hashes_computed": false,
+  "profile_fingerprint": "Original in-memory profile JSON fingerprint retained",
+  "simulation_performed": false,
+  "training_performed": false,
+  "physical_robot_commands_sent": false,
+  "performance_benchmark": false,
+  "validation_scope": "Inference equivalence only; no new safety accuracy or execution protocol validation"
+}

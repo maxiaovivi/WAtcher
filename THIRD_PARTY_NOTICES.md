@@ -1,15 +1,7 @@
-# Third-party and source notices
+# Sources and licenses
 
-## Efficient-WAM
+- Efficient-WAM minimal inference runtime: [jiajun613/Efficient-WAM](https://github.com/jiajun613/Efficient-WAM), revision `2bd75a8c56acfcd5754b98c7ed313176911ccae0`. Apache-2.0 and WAN component license files are retained under `src/safe_wam/vendor/efficient_wam_runtime/`.
+- Safety numerical runtime: original user-supplied `06_offline` simulation export. Its Apache-2.0 license and provenance are retained under `src/safety_verify_wam/`.
+- RoboTwin is an external installation. Its simulator, task code and large assets are not vendored here; use its own installation instructions and licenses.
 
-Upstream: https://github.com/jiajun613/Efficient-WAM
-
-Pinned revision: `2bd75a8c56acfcd5754b98c7ed313176911ccae0`.
-
-The minimal runtime is vendored for reproducible inference. Its Apache-2.0 license and any included third-party notices are retained with the vendored files. Runtime integration and physical-unit preprocessing changes are documented in `docs/efficient_wam_assets.md`. Model weights have separate distribution requirements and are not included.
-
-## Safety verification runtime
-
-Source: the user-provided `07_safety_offline_plus_real` export and its source overlay. The original Apache-2.0 license is retained with the vendored safety runtime. Its numerical model code is kept separate from WAtcher's input validation and composition layer. See `docs/safety_head.md` for the exact checkpoint interface and limitations.
-
-External Python packages retain their respective licenses. Training data, private experiments, credentials and model weights are excluded from this repository.
+Model weights, data, private experiment logs and credentials are excluded. Python dependencies and external model assets retain their respective terms.

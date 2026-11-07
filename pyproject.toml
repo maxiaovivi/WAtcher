@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "watcher-robot"
-version = "0.1.0"
-description = "Efficient-WAM physical action inference with pre-execution safety-head scoring"
+version = "0.2.0"
+description = "RoboTwin task execution with Efficient-WAM and pre-action safety scoring"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.24", "Pillow>=9.4"]
@@ -16,7 +16,7 @@ wam = ["torch>=2.4", "av>=12", "opencv-python-headless>=4.8", "PyYAML>=6", "eino
 dev = ["pytest>=7"]
 
 [project.scripts]
-safe-wam = "safe_wam.cli:main"
+watcher-robotwin = "safe_wam.robotwin_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

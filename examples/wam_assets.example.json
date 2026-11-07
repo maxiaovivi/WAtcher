@@ -1,19 +1,9 @@
 {
-  "schema": "safe_wam_ur_assets/v1",
-  "format": "full_action_frozen_video_v1",
-  "task": "pick",
-  "prompt": "pick",
-  "checkpoint_step": 14000,
-  "checkpoint": "../assets/pick/best.pt",
-  "base_checkpoint": "../assets/Efficient-WAM-RT_stage3.pt",
-  "base_config": "../assets/pick/base_config.json",
+  "schema": "safe_wam_robotwin_assets/v1",
+  "checkpoint": "../assets/Efficient-WAM-RT_stage3.pt",
+  "deploy_config": "../assets/robotwin/deploy_policy.yml",
   "wan_directory": "../assets/Wan2.2-TI2V-5B",
-  "text_embeddings": "../assets/pick/text-embeddings.pt",
-  "normalization": "../assets/pick/train_only_normalization.json",
-  "camera_shapes": {
-    "external": [720, 1280, 3],
-    "hand": [480, 640, 3],
-    "hand2": [480, 640, 3]
-  },
-  "hand_4_3_to_16_9_canvas": false
+  "text_embeddings": "../assets/text/hanging_mug.pt",
+  "instruction": "Grab the beige mug, turn it, set it on the table, then hang it on the medium-sized rack.",
+  "seed": 0
 }

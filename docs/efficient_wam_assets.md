@@ -1,48 +1,66 @@
-# Efficient-WAM UR assets
+# Official RoboTwin Efficient-WAM assets and interface
 
-WAtcher supports the audited **UR frozen-video A** task checkpoint schema, `full_action_frozen_video_v1`. The reference deployment is `pp26_wam_A_pick_sampling1x`, task/prompt `pick`, checkpoint `best_step014000`. This is the user-retained robot-tested version; it is not interchangeable with a new training best, the official 14-D RoboTwin model, video-LoRA B, goal-push, tower-phase, or OpenWAM exports. Those formats are rejected rather than guessed.
+WAtcher's simulation policy uses the unchanged official **14-D Efficient-WAM-RT base**. It does not replace IO layers or load real-robot task adapters. `SimulationEfficientWAMPolicy(config_path, device="cuda:0")` is lazy: importing or constructing it does not load torch, CUDA, weights, a simulator or network resources.
 
-## Input and output
+## Policy contract
 
-`EfficientWAMPolicy(config_path, device="cuda:0").predict(observation)` uses the last real frame's three RGB cameras (`external`, `hand`, `hand2`) and measured state `[q0..q5, gripper_feedback]`: six joint angles in radians plus feedback in `[0,1]`. The frame timestamp must be finite and `<=0` relative to decision time. Different native camera resolutions are supported through the asset contract; they must match the recorded training/deployment shapes. WAM consumes only the current frame; the safety head independently consumes the four real history frames.
+`predict(observation, instruction=None)` accepts either WAtcher's `SimulationObservation` or an official `TASK_ENV.get_obs()` dictionary:
 
-The returned float32 `[16,7]` candidate is **robot-base TCP speedL**, columns `[vx,vy,vz,wx,wy,wz,gripper]`, with m/s, rad/s, and `0=open, 1=closed`. This is not a joint-target or delta-position protocol. Recorded WAM sampling is 15Hz; the safety model's historical speedL profile retains unknown action-duration semantics. Do not silently substitute the `.06s` RoboTwin linear-waypoint contract.
+```python
+{
+    "observation": {
+        "head_camera": {"rgb": head_rgb},
+        "left_camera": {"rgb": left_rgb},
+        "right_camera": {"rgb": right_rgb},
+    },
+    "joint_action": {"vector": current_drive_target14},
+}
+```
 
-The adapter preserves PyAV AREA resizing into an RGB224 letterbox, removal of its known padding, then OpenCV AREA three-view mosaic `[384,320,3]`. State min/max normalization and action denormalization occur once; constant state dimensions map to zero. No normalization clipping, speed clipping, gripper thresholding, or action repetition is applied. The downstream candidate validator can reject out-of-range gripper predictions.
+WAtcher's `SimulationObservation.images` uses `head`, `left`, `right`; the adapter maps those names to the native camera keys above. All images are native uint8 RGB; the head camera must be240×320. The official preprocessor resizes each wrist camera to160×120, concatenates it beneath the head camera, then pads the360×320 mosaic to384×320. This is the vendored official preprocessing, not a safety-head resize. The safety head separately uses its own trained128×128 per-camera preprocessing.
 
-`hand_4_3_to_16_9_canvas=true` is only for the historically recorded pick camera conversion: raw hand images `[480,640,3]` are placed inside the trained `[720,1280,3]` canvas using a `[720,960]` resize and 160-pixel side padding. Do not enable it for the reference profile whose hand shapes are already `[480,640,3]`.
+`joint_action.vector` is **current joint drive-target proxy**, not measured qpos: the pinned environment's `get_obs()` calls `robot.get_left_arm_jointState()` and `get_right_arm_jointState()`, which read `joint.get_drive_target()[0]`. Ordering is `[left6 joints, left_gripper, right6 joints, right_gripper]`. Joint targets are radians. RoboTwin grippers use **1=open, 0=closed**. Real qpos is available through `get_left_arm_real_jointState()` and `get_right_arm_real_jointState()` for separate logs; substituting it into the policy or original safety head changes the input contract.
 
-## Required local files
+The policy returns raw finite float32 **[16,14] absolute targets**. The official checkpoint-embedded qpos mean/std normalizes state and denormalizes actions inside the official runner; no extra minmax, target subtraction, or manual denormalization is applied. There is no gripper clipping in the policy. Native `robot.set_gripper()` clips to[0,1], so an explicit pipeline materialization mode must handle indices6/13 **before** scoring if clipping is desired, and execute that exact scored candidate afterward.
 
-Copy `examples/wam_assets.example.json` and supply explicit local paths (relative paths resolve against that JSON):
+`reset(seed=None)` clears the official runner's observation history and action buffer, resets the chunk index, and rebinds the configured cached instruction. `close()` releases optional video output handles. `predict` never calls `take_action`, `setup_demo`, or any hardware interface. Scoped inference RNG uses `(seed + chunk_index*104729) mod (2**63-1)` and restores the surrounding torch RNG; it is an explicit reproducibility rule, not a claim that outputs match a different historical RNG schedule.
 
-| Key | Asset |
+## External assets
+
+Copy `examples/wam_assets.example.json`. Paths are local and resolve relative to that JSON:
+
+| Key | Required asset |
 |---|---|
-| `checkpoint` | The matching trusted UR task checkpoint with `manifest`, `step`, and complete `trainable_state` |
-| `checkpoint_step` | Exact selected checkpoint step, e.g. 14000; not the run's target step |
-| `base_checkpoint` | Existing official `Efficient-WAM-RT_stage3.pt` complete model/config export |
-| `base_config` | Original task `base_config.json`, retaining official model architecture and identity metadata |
-| `wan_directory` | Existing WAN `config.json` and `Wan2.2_VAE.pth`; the 5B teacher is not loaded |
-| `text_embeddings` | Matching cached task/prompt UMT5 `text-embeddings.pt`, one finite `[L,4096]` embedding |
-| `normalization` | Original `train_only_normalization.json`, exactly matching the task checkpoint manifest |
-| `camera_shapes` | Original native RGB shapes, keyed by all three cameras |
+| `schema` | `safe_wam_robotwin_assets/v1` |
+| `checkpoint` | Complete official `Efficient-WAM-RT_stage3.pt` model/config export |
+| `deploy_config` | Official RoboTwin `deploy_policy.yml` retaining14-D architecture,16-action chunk,384×320 current mosaic,192×160 future latents,10 action steps and video refresh[0,1] |
+| `wan_directory` | Existing `config.json` and `Wan2.2_VAE.pth` |
+| `text_embeddings` | Existing official CPU UMT5 cache containing `instruction`, `scene_prefix`, `prompt`, and one finite `[L,4096]` embedding |
+| `instruction` | Exact instruction in that cache; full prompt must equal official scene prefix plus this instruction |
+| `seed` | Optional integer episode seed, default0 |
 
-Also required: `schema=safe_wam_ur_assets/v1`, `format=full_action_frozen_video_v1`, exact `task` and `prompt`. The official base starts at 14-D state/actions. The adapter allocates its compact model, strict-loads that complete export, replaces the three UR IO linears with 7-D FP32 layers, then requires all 130 action-expert tensors (138,987,271 parameters), exact shapes and finite FP32 values. The pretrained compact video branch remains frozen. The task checkpoint is **not** standalone: all listed dependencies must match. Existing digest strings are retained as historical identity metadata, without computing fresh hashes; this does not constitute new cryptographic integrity verification. Only load checkpoints from a trusted source.
+The adapter uses the original compact architecture allocation and strict full checkpoint load, omitting only the redundant5B teacher initialization that would immediately be overwritten. It does not allocate/download the teacher or text encoder. An empty normalization override inherits the official checkpoint's embedded mean/std; placeholder stats paths in the example upstream YAML are not used. The loaded model must remain14-D, have normalization enabled and match the specified official inference settings. Unmatched instructions are rejected; there is no automatic text encoding, cache search or hashing.
 
-All loading is lazy at first `predict`; importing/constructing the policy does not import torch, allocate CUDA, download assets, or contact a robot. Cached text avoids constructing a text encoder. The vendored loader still imports tokenizer definitions, so its Python dependencies include transformers/ftfy/regex. Install the `wam` extra in an appropriate existing CUDA PyTorch environment. FlashAttention is optional and disabled in this adapter in favor of the original SDPA fallback; `decord` is not required for current-frame inference.
+The [vendored runtime](../src/safe_wam/vendor/efficient_wam_runtime) is from [Efficient-WAM commit2bd75a8c56acfcd5754b98c7ed313176911ccae0](https://github.com/jiajun613/Efficient-WAM/tree/2bd75a8c56acfcd5754b98c7ed313176911ccae0/inference/robotwin/EfficientWAM), with Apache-2.0 and WAN license files retained. Its package initializer omits benchmark execution entry points. Model assets retain their own terms and remain outside Git. No fresh hashes are computed; strict tensor/config loading is not fresh cryptographic file-integrity verification. Only use trusted local model files.
 
-For externally supplied physical actions, use WAtcher's evaluate-only path. It does not need a WAM policy or any WAM assets and never substitutes generated actions for the supplied candidate. No API here sends robot commands.
+## Native simulator integration
 
-## Observed smoke boundary
+The existing audited installation uses RoboTwin revision `c3ddfa8b97d5519efa828b075999bd0006778e5e`. Launch one isolated process per environment/policy, with working directory set to the RoboTwin root; its native code uses relative paths and global RNG. The official API is:
 
-One real-record CUDA smoke loaded the reference pick A step14000 export and generated a finite float32 `[16,7]` candidate. It used four consecutive native video frames from one recorded episode, its measured joint/gripper state and measured relative source timestamps, with LeRobot-v3 episode video offsets checked. The raw gripper range was `[0.9796699, 1.0052298]`; the default strict pipeline correctly returned `POLICY_ERROR` before safety scoring because the final value exceeds `[0,1]`.
+```python
+task.setup_demo(now_ep_num=0, seed=seed, is_test=True, **task_config)
+task.set_instruction(exact_cached_instruction)
+observation = task.get_obs()
+candidate = policy.predict(observation, instruction=task.get_instruction())
+# Score/materialize the complete candidate first. Only on an allowing model gate:
+for target14 in approved_actions[:execute_steps]:
+    task.take_action(target14, action_type="qpos")
+task.close_env(clear_cache=False)
+policy.reset()
+```
 
-The saved raw candidate was then evaluated with the separately explicit `gripper_mode="clip"` contract, using the same source frame mapping and measured times. Exactly one gripper value changed to1; all six speed columns remained bitwise unchanged. The original07 safety head returned finite16 step probabilities plus post/overall, with step maximum `0.00024346`, post/overall `0.06958139`, and threshold `.5`. The model gate returned `ALLOW`; its approved actions exactly matched the materialized candidate that was scored. This second stage used **zero new WAM generations**. It does not authorize actuation or establish safety/generalization. The raw WAM model is unchanged, strict remains the default, and the chosen materialization mode/count is reported in the decision.
+The native `take_action(...,"qpos")` executes TOPP interpolation independently for each endpoint/arm at physics stepping1/250s. Endpoint duration is determined by TOPP; it is **not** a fixed`.06s` interval. The original safety profile therefore retains unknown-duration semantics. Never change its timing features merely because this is simulation. Stop on native success/horizon. In `guard` mode, do not execute a rejected chunk; `monitor` deliberately executes valid rejected chunks for simulation comparison and records that fact. Replan from the next real observation after the chosen execution prefix; policy output does not itself establish that a task is safely completed.
 
-The opt-in `tests/smoke_wam_record.py` and `tests/rescore_wam_record.py` reproduce these two distinct stages with existing local assets; record extraction additionally needs PyArrow. The small public summary omits private paths, images and action values. These are functional smoke observations rather than robot success statistics.
+The `watcher-robotwin` CLI uses `safe_wam.robotwin_env` to load the installed task configuration, resolve embodiment and camera settings, and select the renderer in an isolated process. For manual integration, the native root must be on `sys.path`, together with `policy` and `description/utils`; import the selected task and use the API above. Model/text paths must be provided by the local asset JSON.
 
-## Source provenance and licenses
-
-Vendored inference code comes from [Efficient-WAM commit 2bd75a8c56acfcd5754b98c7ed313176911ccae0](https://github.com/jiajun613/Efficient-WAM/tree/2bd75a8c56acfcd5754b98c7ed313176911ccae0/inference/robotwin/EfficientWAM), whose [Apache-2.0 license](https://github.com/jiajun613/Efficient-WAM/blob/2bd75a8c56acfcd5754b98c7ed313176911ccae0/LICENSE) is included. The 23 retained Python files were byte-compared with the existing audited runtime; no hashes were generated. Only the package `__init__.py` is changed to remove robot benchmark entry imports; `deploy_policy.py` and benchmark task/launch files are omitted.
-
-WAN component copyright headers remain intact, and its [Apache-2.0 license](https://github.com/Wan-Video/Wan2.2/blob/main/LICENSE.txt) is included separately. Third-party model assets retain their own terms; no model weights, data, robot logs, credentials, or private experiment records are part of this repository. The adapter's IO replacement, task restoration, mosaic and runner settings follow the existing `wam_model.py` and verified UR deployment wrapper. Real-robot success records are provenance for the chosen artifact, not a safety guarantee for this combined system.
+This document describes model and simulator interfaces. A model `ALLOW` remains a prediction, not proof of safety, task success, or authorization for a real robot.
