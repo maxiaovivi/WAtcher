@@ -21,3 +21,15 @@ weights/
 data/
 outputs/
 *.local.json
+
+# Local working folders kept beside the repo
+.claude/
+.DS_Store
+WAtcher_site/
+# Test300 benchmark is distributed separately (Hugging Face), never committed
+WAtcher_Test300_*/
+**/LABELS.json
+**/*_EVIDENCE.json
+
+# Project page media is tracked
+!site/**/*.mp4

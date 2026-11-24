@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WAtcher: Watching Ahead for Safe Robotic Manipulation with Efficient World-Action Models</title>
+  <meta name="description" content="WAtcher lets a world-action model imagine the outcome of every candidate action chunk before executing it; a detachable 1.7M-parameter Safe-Guard reads the imagined outcome and replaces risky chunks with a bounded retreat." />
+  <meta name="theme-color" content="#2C3E50" />
+  <link rel="icon" href="assets/images/watcher-mark.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/styles.css" />
+  <meta property="og:title" content="WAtcher: Watching Ahead for Safe Robotic Manipulation with Efficient World-Action Models" />
+  <meta property="og:description" content="Imagine the outcome of every action chunk, then execute it or retreat." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://zyshan0929.github.io/WAtcher/" />
+  <meta property="og:image" content="https://zyshan0929.github.io/WAtcher/assets/images/og-teaser.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script>
+    /* apply a saved theme before first paint */
+    try { var t = localStorage.getItem('watcher-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- ══ Header ══ -->
+<header class="site-header">
+  <div class="header-inner">
+    <a class="header-brand" href="#top" aria-label="WAtcher, back to top">
+      <img src="assets/images/watcher-mark.svg" alt="" width="26" height="28" />
+      <span><span class="wa">WA</span>tcher</span>
+    </a>
+    <div class="header-right">
+      <nav class="header-nav" aria-label="Sections">
+        <a href="#video">Video</a>
+        <a href="#abstract">Abstract</a>
+        <a href="#demo">Demo</a>
+        <a href="#method">Method</a>
+        <a href="#data">Data</a>
+        <a href="#results">Results</a>
+        <a href="#citation">Citation</a>
+      </nav>
+      <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch theme">
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2z"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ══ Hero ══ -->
+<section class="card hero" id="top" aria-label="WAtcher">
+  <div class="hero-head">
+    <img class="hero-mark" src="assets/images/watcher-mark.svg" alt="" width="74" height="78" />
+    <h1 class="hero-title">
+      <em><span class="wa">WA</span>tcher</em>: Watching Ahead for Safe Robotic Manipulation with Efficient World-Action Models
+    </h1>
+  </div>
+  <p class="hero-authors">
+    <span class="au"><a href="https://zyshan0929.github.io">Ziyu Shan</a><sup>1</sup>,</span>
+    <span class="au">MA XIAO<sup>1</sup>,</span>
+    <span class="au">Kangrui Yu<sup>1</sup>,</span>
+    <span class="au">Changjie Wang<sup>2</sup>,</span>
+    <span class="au">Gaoyuan Wu<sup>1</sup>,</span>
+    <span class="au">Zaijia Yang<sup>1</sup>,</span>
+    <span class="au">Chuanrui Zhang<sup>1</sup>,</span>
+    <span class="au">Qirui Li<sup>3</sup>,</span>
+    <span class="au">Yanbo Zhang<sup>3</sup>,</span>
+    <span class="au">Duomin Wang<sup>3,<span class="mark" title="Project lead">&dagger;</span></sup>,</span>
+    <span class="au">Ziwei Wang<sup>1,<span class="mark mail" title="Corresponding author">&#x2709;&#xFE0E;</span></sup></span>
+  </p>
+  <p class="hero-affil">
+    <span><sup>1</sup> Nanyang Technological University</span> &nbsp;&middot;&nbsp;
+    <span><sup>2</sup> KTH Royal Institute of Technology</span> &nbsp;&middot;&nbsp;
+    <span><sup>3</sup> NVIDIA</span><br>
+    <span><sup>&dagger;</sup> Project lead</span> &nbsp;&middot;&nbsp;
+    <span><sup><span class="mail">&#x2709;&#xFE0E;</span></sup> Corresponding author</span>
+  </p>
+
+  <div class="btn-row">
+    <span class="btn btn-disabled" aria-disabled="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Paper <span class="btn-sub">(coming soon)</span>
+    </span>
+    <span class="btn btn-disabled" aria-disabled="true">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+      Code <span class="btn-sub">(coming soon)</span>
+    </span>
+    <a class="btn btn-primary" href="#video">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10.2 9.4v5.2l4.4-2.6z" fill="currentColor"/></svg>
+      Video
+    </a>
+    <a class="btn" href="#results">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Results
+    </a>
+  </div>
+
+  <div class="hero-cards">
+    <div class="metric-card">
+      <div class="metric-label">300-question benchmark</div>
+      <div class="metric-value">94.2<span class="unit">%</span></div>
+      <div class="metric-desc">Safe-Guard's balanced accuracy, against 72.5% for zero-shot GPT-6-Astra and 63.3% for Claude Opus 5.5</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Hazardous closed-loop trials</div>
+      <div class="metric-value"><span class="from">27.0</span><span class="arrow">&rarr;</span>10.8<span class="unit">%</span></div>
+      <div class="metric-desc">over 400 paired RoboTwin trials on Safe-Guard's training tasks in new scenes, without lowering task success</div>
+    </div>
+    <div class="metric-card accent">
+      <div class="metric-label">Safety check via</div>
+      <div class="metric-value">Imagined outcomes</div>
+      <div class="metric-desc">2 denoising steps &middot; 1.7M-parameter Safe-Guard &middot; 32&nbsp;ms per check &middot; bounded retreat</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Overview video ══ -->
+<section class="card" id="video">
+  <p class="section-label">Overview video</p>
+  <h2 class="section-title">WAtcher in <span class="soft">71 seconds.</span></h2>
+  <p class="section-body">A wall of hazards, a knife that stops for a hand, the same wall with retreats (most of them scripted), how the hazard data is labeled, and an illustration of screening. No narration.</p>
+  <div class="film">
+    <div class="film-frame">
+      <video id="film" controls preload="metadata" playsinline poster="assets/images/film-poster.webp" aria-label="WAtcher overview video">
+        <source src="assets/videos/film-1080.mp4" type="video/mp4" media="(min-width: 900px)" />
+        <source src="assets/videos/film-720.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <div class="chapters" role="group" aria-label="Chapters">
+      <button class="chap" type="button" data-t="0" aria-label="0:00, Hazards"><span class="t">0:00</span>Hazards</button>
+      <button class="chap" type="button" data-t="15" aria-label="0:15, A hand under the knife"><span class="t">0:15</span>A hand under the knife</button>
+      <button class="chap" type="button" data-t="34" aria-label="0:34, Retreats, mostly scripted"><span class="t">0:34</span>Retreats (mostly scripted)</button>
+      <button class="chap" type="button" data-t="44.3" aria-label="0:44, Hazard data"><span class="t">0:44</span>Hazard data</button>
+      <button class="chap" type="button" data-t="56.3" aria-label="0:56, Screening, an illustration"><span class="t">0:56</span>Screening (illustration)</button>
+      <button class="chap" type="button" data-t="68.3" aria-label="1:08, End"><span class="t">1:08</span>End</button>
+    </div>
+    <p class="note small" style="margin:12px 4px 2px">
+      The film mixes two kinds of retreat. In the RoboTwin arm-collision and hanging-mug cases and in LIBERO, the retreat is triggered by development Safe-Guard checkpoints that read the current views, the state and the candidate (no imagined frames). The other showcase scenes (the knife, new objects, toppling racks and similar) switch at the hazard onset to a scripted retreat or a scripted safe path. The hazard-data page illustrates labeling with a scripted showcase scene; its benchmark figures are the paper's 300-question results for Safe-Guard's selected seed.
+    </p>
+  </div>
+</section>
+
+<!-- ══ Abstract ══ -->
+<section class="card alt" id="abstract">
+  <p class="section-label">Abstract</p>
+  <h2 class="section-title">Imagine the outcome, <span class="soft">then decide.</span></h2>
+  <p class="tldr"><b>TL;DR.</b> WAtcher lets a world-action model imagine the outcome of every candidate action chunk before executing it. A lightweight, detachable Safe-Guard, trained on hazards that an autonomous pipeline collects and labels from recorded physical events, reads that imagined outcome and replaces a risky chunk with a bounded retreat.</p>
+
+  <figure class="figure-wrap reveal">
+    <img class="fig-img zoomable" src="assets/images/fig-teaser.webp" width="2600" height="1465" loading="lazy"
+         alt="WAtcher at a glance: (1) efficient world modeling with a compact video expert and an action expert; (center) Safe-Guard scores the imagined outcome of a candidate chunk, executing low-risk chunks and retreating from high-risk ones; (2) autonomous hazard data collection; (3) task success on the real UR7e, RoboTwin and ManiSkill3; (4) Safe-Guard prevents a bottle from toppling on the UR7e and leads on the blind set and the 300-question benchmark." />
+    <figcaption class="figure-caption">
+      <strong>WAtcher at a glance.</strong> (1) The host's compact video expert (architecture of Efficient-WAM) imagines low-resolution futures (illustrative). (Center) Safe-Guard passes candidates whose imagined outcome has risk below &tau;<sub>r</sub>; otherwise the robot retreats. (2) Pipeline-labeled hazards train Safe-Guard (illustrative icons). (3) Task success of WAtcher vs. Fast-WAM (our re-run) and &pi;<sub>0.5</sub> (third-party on RoboTwin); UR7e: 5-task average. (4) Safe-Guard prevents toppling on the UR7e and leads on the blind set and the 300-question benchmark. Click to enlarge.
+    </figcaption>
+  </figure>
+
+  <div class="abstract-grid">
+    <p class="section-body">
+      World-action models (WAMs) couple future imagination with action generation, but they execute every action chunk while ignoring the potential risk. To fill this gap, we present <strong>WAtcher</strong>, a safety-aware world-action framework in which the policy imagines the outcome of the candidate chunk before execution. For fast future preview, WAtcher builds on a compact WAM whose video expert imagines the visual outcome in only <strong>two denoising steps</strong>. In addition, we propose <strong>Safe-Guard</strong>, a lightweight module kept outside the WAM that scores each candidate chunk from its imagined outcome and triggers a bounded retreat when the risk is high. Safe-Guard is detachable and can be applied to other WAMs. To train Safe-Guard, we build an autonomous pipeline to collect hazard data from RoboTwin, LIBERO, and a real robot. Specifically, the pipeline perturbs expert demonstrations and labels each candidate chunk from the physical events recorded when it is executed, such as contacts and losses of support. Using the ~25,000 labeled windows from this pipeline, Safe-Guard reaches <strong>92.1%</strong> balanced accuracy on a blind set, and cuts hazardous closed-loop trials on training tasks from <strong>27.0% to 10.8%</strong> without lowering task success. On a held-out 300-question benchmark, it scores <strong>94.2%</strong>, against 72.5% and 63.3% for zero-shot GPT-6-Astra and Claude Opus 5.5. WAtcher also reaches 90.4% and 82.4% average success on RoboTwin&nbsp;2.0 and ManiSkill3, on par with or above leading WAMs, and <strong>74.0%</strong> on five real-world tasks with Safe-Guard on, against 59.5% for &pi;<sub>0.5</sub>.
+    </p>
+    <div class="keypoints">
+      <div class="keypoint reveal">
+        <div class="keypoint-title">The imagination is already there</div>
+        <div class="keypoint-body">In a WAM whose video and action experts share joint attention and are trained with decoupled noise levels (as in <a href="https://arxiv.org/abs/2606.10040">Efficient-WAM</a>), the frozen video expert can take the candidate chunk as a fixed input and imagine its outcome in two denoising steps, so no separate world model is trained or run.</div>
+      </div>
+      <div class="keypoint k-guard reveal">
+        <div class="keypoint-title">A detachable Safe-Guard</div>
+        <div class="keypoint-body">1.7M parameters and 32&nbsp;ms per check. It reads the views, the state, every command and the imagined frames, never the policy's features; retrained, it also serves Fast-WAM-Joint.</div>
+      </div>
+      <div class="keypoint k-data reveal">
+        <div class="keypoint-title">Hazards labeled by physics</div>
+        <div class="keypoint-body">An autonomous pipeline perturbs expert demonstrations in RoboTwin, LIBERO and on a UR7e, executes every candidate and labels it from recorded events: 25,434 windows, 7,392 of them risky.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Demo: same start, two futures ══ -->
+<section class="card" id="demo" data-duo>
+  <p class="section-label">Demo</p>
+  <h2 class="section-title">Same start, <span class="soft">two futures.</span></h2>
+  <p class="section-body">
+    Each pair starts from the same saved simulator state. <b>No guard:</b> a hazardous candidate chunk, constructed by our data pipeline rather than proposed by the policy, is executed as is. <b>With Safe-Guard:</b> a Safe-Guard checkpoint scores the same candidate, its risk crosses the threshold, and a fixed retreat replaces the chunk. These development checkpoints read the current views, the state and the candidate, not imagined frames, so the clips show the decision and the retreat rather than the imagination step. Switch between the branches; both stay in sync.
+  </p>
+
+  <div class="duo-controls">
+    <div class="seg" role="group" aria-label="Choose branch">
+      <button type="button" data-mode="danger" aria-pressed="true"><span class="dot" aria-hidden="true"></span>No guard</button>
+      <button type="button" data-mode="guarded" aria-pressed="false"><span class="dot" aria-hidden="true"></span>With Safe-Guard</button>
+    </div>
+    <div class="duo-legend">
+      <span><i class="chip-dot" style="background:var(--danger)"></i>red frame: the hazardous branch after the fork</span>
+      <span><i class="chip-dot" style="background:var(--c-ours)"></i>green frame: retreat triggered by Safe-Guard</span>
+      <button class="mini-btn" type="button" data-duo-restart>Restart</button>
+      <button class="mini-btn" type="button" data-duo-pause>Pause all</button>
+    </div>
+  </div>
+
+  <div class="duo-grid" data-mode="danger">
+    <figure class="duo-tile" data-div="0.84" data-dur-danger="7.02" data-dur-guarded="7.02" data-hazard-label="spoon flung, cup tipped" data-guard-label="p 1.00 → retreat">
+      <div class="duo-stage">
+        <span class="duo-flag"><span class="dot"></span><span class="txt">same start</span></span>
+        <span class="speed-pill">&#8531;&times;</span>
+        <video class="v-danger" data-src="assets/videos/wall/rt0007-danger.mp4" poster="assets/images/wall/rt0007.webp" muted playsinline preload="none" data-autoplay aria-label="No guard: the held red block drives into the cluttered table; a spoon is flung and a cup tips"></video>
+        <video class="v-guarded" data-src="assets/videos/wall/rt0007-guarded.mp4" poster="assets/images/wall/rt0007.webp" muted playsinline preload="none" data-autoplay aria-label="With Safe-Guard: the arm lifts away and the table stays undisturbed"></video>
+      </div>
+      <figcaption class="duo-cap"><div class="t">The held block drives into the clutter</div><div class="s"><span class="badge sim">RoboTwin</span> <span class="badge hz">contact</span> <span class="badge sg">Safe-Guard p = 1.00</span></div></figcaption>
+    </figure>
+    <figure class="duo-tile" data-div="1.2" data-dur-danger="7.02" data-dur-guarded="7.02" data-hazard-label="block flung away" data-guard-label="p 1.00 → retreat">
+      <div class="duo-stage">
+        <span class="duo-flag"><span class="dot"></span><span class="txt">same start</span></span>
+        <span class="speed-pill">&#8531;&times;</span>
+        <video class="v-danger" data-src="assets/videos/wall/c0159-danger.mp4" poster="assets/images/wall/c0159.webp" muted playsinline preload="none" data-autoplay aria-label="No guard: the wrist folds into the forearm and the green block is flung away"></video>
+        <video class="v-guarded" data-src="assets/videos/wall/c0159-guarded.mp4" poster="assets/images/wall/c0159.webp" muted playsinline preload="none" data-autoplay aria-label="With Safe-Guard: the arm keeps the block and lifts it"></video>
+      </div>
+      <figcaption class="duo-cap"><div class="t">The wrist folds back and flings the block</div><div class="s"><span class="badge sim">RoboTwin</span> <span class="badge hz">self-contact</span> <span class="badge sg">Safe-Guard p = 1.00</span></div></figcaption>
+    </figure>
+    <figure class="duo-tile" data-div="0.8" data-dur-danger="7.02" data-dur-guarded="7.02" data-hazard-label="wrist hits the table" data-guard-label="p 1.00 → retreat">
+      <div class="duo-stage">
+        <span class="duo-flag"><span class="dot"></span><span class="txt">same start</span></span>
+        <span class="speed-pill">&#8531;&times;</span>
+        <video class="v-danger" data-src="assets/videos/wall/rt42-danger.mp4" poster="assets/images/wall/rt42.webp" muted playsinline preload="none" data-autoplay aria-label="No guard: the wrist strikes the tabletop and flings the held red block and small objects into the air"></video>
+        <video class="v-guarded" data-src="assets/videos/wall/rt42-guarded.mp4" poster="assets/images/wall/rt42.webp" muted playsinline preload="none" data-autoplay aria-label="With Safe-Guard: the arm lifts 9 cm, still holding the red block"></video>
+      </div>
+      <figcaption class="duo-cap"><div class="t">The wrist strikes the table and flings the block</div><div class="s"><span class="badge sim">RoboTwin</span> <span class="badge hz">contact</span> <span class="badge sg">Safe-Guard p = 1.00</span></div></figcaption>
+    </figure>
+    <figure class="duo-tile" data-div="0.9" data-dur-danger="7.02" data-dur-guarded="7.02" data-hazard-label="arm flips into itself" data-guard-label="p 0.93 → retreat">
+      <div class="duo-stage">
+        <span class="duo-flag"><span class="dot"></span><span class="txt">same start</span></span>
+        <span class="speed-pill">&#8531;&times;</span>
+        <video class="v-danger" data-src="assets/videos/wall/c0229-danger.mp4" poster="assets/images/wall/c0229.webp" muted playsinline preload="none" data-autoplay aria-label="No guard: the arm swings up and over until its own links collide"></video>
+        <video class="v-guarded" data-src="assets/videos/wall/c0229-guarded.mp4" poster="assets/images/wall/c0229.webp" muted playsinline preload="none" data-autoplay aria-label="With Safe-Guard: the arm lifts straight up instead of swinging over"></video>
+      </div>
+      <figcaption class="duo-cap"><div class="t">The arm flips over into itself</div><div class="s"><span class="badge sim">RoboTwin</span> <span class="badge hz">self-contact</span> <span class="badge sg">Safe-Guard p = 0.93</span></div></figcaption>
+    </figure>
+    <figure class="duo-tile" data-div="1.1" data-dur-danger="7.02" data-dur-guarded="7.02" data-hazard-label="block pressed into table" data-guard-label="p 1.00 → retreat">
+      <div class="duo-stage">
+        <span class="duo-flag"><span class="dot"></span><span class="txt">same start</span></span>
+        <span class="speed-pill">&#8531;&times;</span>
+        <video class="v-danger" data-src="assets/videos/wall/c199-danger.mp4" poster="assets/images/wall/c199.webp" muted playsinline preload="none" data-autoplay aria-label="No guard: the wrist folds onto the red block it holds and presses it into the tabletop"></video>
+        <video class="v-guarded" data-src="assets/videos/wall/c199-guarded.mp4" poster="assets/images/wall/c199.webp" muted playsinline preload="none" data-autoplay aria-label="With Safe-Guard: the arm lifts 9 cm with the block"></video>
+      </div>
+      <figcaption class="duo-cap"><div class="t">The wrist folds onto the held block and presses it into the table</div><div class="s"><span class="badge sim">RoboTwin</span> <span class="badge hz">contact</span> <span class="badge sg">Safe-Guard p = 1.00</span></div></figcaption>
+    </figure>
+    <figure class="duo-tile" data-div="0.3" data-dur-danger="4.55" data-dur-guarded="4.55" data-hazard-label="bottle dropped" data-guard-label="p 1.00 → keep grip, raise 9 cm">
+      <div class="duo-stage">
+        <span class="duo-flag"><span class="dot"></span><span class="txt">same start</span></span>
+        <span class="speed-pill">1&times;</span>
+        <video class="v-danger" data-src="assets/videos/wall/libero-danger.mp4" poster="assets/images/wall/libero.webp" muted playsinline preload="none" data-autoplay aria-label="No guard: the gripper releases the wine bottle beyond the table and it falls to the floor"></video>
+        <video class="v-guarded" data-src="assets/videos/wall/libero-guarded.mp4" poster="assets/images/wall/libero.webp" muted playsinline preload="none" data-autoplay aria-label="With Safe-Guard: the gripper keeps the bottle and raises it"></video>
+      </div>
+      <figcaption class="duo-cap"><div class="t">Early release: the wine bottle falls</div><div class="s"><span class="badge sim">LIBERO</span> <span class="badge hz">loss of support</span> <span class="badge sg">Safe-Guard p = 1.00</span></div></figcaption>
+    </figure>
+  </div>
+  <p class="note small" style="margin-top:12px">
+    Selected examples, not a success rate; several start from scenarios of the 300-question benchmark. The hazardous candidates are constructed by the pipeline rather than proposed by the policy. Each retreat is triggered by a Safe-Guard checkpoint from our development runs (a RoboTwin head and a LIBERO adapter) scoring the current views, the state and the candidate; the tile shows the risk that triggered it, against a threshold of 0.5, and a fixed controller then lifts the arm about 9&nbsp;cm (in LIBERO it keeps the grip and raises the bottle), instead of the paper's bounded recovery. In one of the 16 recorded pairs, not shown here, the retreat itself still ended in a self-contact. Views are review cameras that the models do not read. RoboTwin clips play at about one third of real time; LIBERO in real time.
+  </p>
+
+</section>
+
+<!-- ══ Method ══ -->
+<section class="card" id="method">
+  <p class="section-label">Method</p>
+  <h2 class="section-title">Propose, imagine, check, <span class="soft">then act.</span></h2>
+  <p class="section-body">
+    WAtcher pairs a compact world-action policy, whose video expert imagines the future for its action expert, with Safe-Guard, a head that predicts the execution risk of each candidate from its imagined outcome and acts on it. Safe-Guard reads no policy features and leaves the policy's weights unchanged.
+  </p>
+
+  <figure class="figure-wrap reveal">
+    <img class="fig-img zoomable" src="assets/images/fig-method.webp" width="2600" height="983" loading="lazy"
+         alt="Overview of WAtcher. (a) A compact video expert distilled from a large video model and an action expert share joint attention; the action expert proposes a candidate chunk, the frozen video expert imagines its outcome, and Safe-Guard predicts step- and chunk-level risk, then executes the chunk or retreats. (b) Safe-Guard in detail: a shared CNN for current and imagined views, MLP state token, action tokens, a CLS token, a Transformer and a shared classifier." />
+    <figcaption class="figure-caption">
+      <strong>Overview of WAtcher.</strong> (a) A compact video expert, distilled from a large video model, encodes the instruction and observation and imagines future latents; the action expert reads them with the state through joint attention and proposes a candidate chunk. Safe-Guard, a separately trained head, reads the candidate, its frames imagined in a second pass of the frozen video expert, the current views, and the state, and predicts step- and chunk-level risk, then executes the chunk or retreats. (b) Safe-Guard in detail. The policy stays unchanged.
+    </figcaption>
+  </figure>
+
+  <div class="steps">
+    <div class="step reveal">
+      <div class="step-num"><i>1</i> Propose</div>
+      <div class="step-title">A compact WAM proposes a chunk</div>
+      <div class="step-body">A 1.0B-parameter host policy following the <a href="https://arxiv.org/abs/2606.10040">Efficient-WAM</a> architecture (a 0.8B video expert distilled from Wan2.2-TI2V-5B and a 0.2B action expert) samples a candidate chunk of <code>H = 16</code> commands by flow matching.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num"><i>2</i> Imagine</div>
+      <div class="step-title">Its own video expert imagines the outcome</div>
+      <div class="step-body">The video expert takes the candidate as a fixed, noise-free input and denoises only the future frames, in the same <b>two steps</b>, like the forward mode of <a href="https://arxiv.org/abs/2504.02792">Unified World Models</a>. The last imagined frame of each view is decoded.</div>
+    </div>
+    <div class="step s-guard reveal">
+      <div class="step-num"><i>3</i> Check</div>
+      <div class="step-title">Safe-Guard scores every command</div>
+      <div class="step-body">A shared CNN tokenizes current and imagined views on a coarse grid; MLPs embed the state and each command with its displacement; a 3-layer Transformer outputs one risk per command and one for the whole chunk.</div>
+    </div>
+    <div class="step s-guard reveal">
+      <div class="step-num"><i>4</i> Act</div>
+      <div class="step-title">Execute, or retreat within bounds</div>
+      <div class="step-body">If the chunk risk stays below <code>&tau;<sub>r</sub></code>, the first <code>K</code> commands run. Otherwise a robot-specific recovery controller moves toward a reference with bounded increments (in simulation, back toward the start of the previously accepted chunk), and a fresh observation conditions the next proposal.</div>
+    </div>
+  </div>
+
+  <div class="eq-grid">
+    <div class="eq reveal">
+      <div class="eq-title">Chunk risk</div>
+      <math display="block" aria-label="rho t equals the maximum of the maximum over k of r t k, and r t cls">
+        <mrow><msub><mi>&rho;</mi><mi>t</mi></msub><mo>=</mo><mi>max</mi><mo>(</mo><munder><mi>max</mi><mi>k</mi></munder><mspace width="0.25em"></mspace><msub><mi>r</mi><mrow><mi>t</mi><mo>,</mo><mi>k</mi></mrow></msub><mo>,</mo><mspace width="0.3em"></mspace><msubsup><mi>r</mi><mi>t</mi><mtext>cls</mtext></msubsup><mo>)</mo></mrow>
+      </math>
+      <p>One risky command is enough to flag the chunk; the step scores also localize the hazard within it. The [CLS] score catches hazards no single command shows, such as a slip that builds up over the chunk.</p>
+    </div>
+    <div class="eq reveal">
+      <div class="eq-title">Gate</div>
+      <math display="block" aria-label="g t equals the indicator that rho t is at least tau r">
+        <mrow><msub><mi>g</mi><mi>t</mi></msub><mo>=</mo><mi>&#x1D7D9;</mi><mo>[</mo><msub><mi>&rho;</mi><mi>t</mi></msub><mo>&ge;</mo><msub><mi>&tau;</mi><mi>r</mi></msub><mo>]</mo></mrow>
+      </math>
+      <p>If <i>g</i><sub>t</sub> = 0 the prefix A<sub>t</sub>[0:K] executes (K = 16 in simulation, 8 on the UR7e); otherwise the recovery controller takes over and a fresh observation conditions the next proposal.</p>
+    </div>
+    <div class="eq reveal">
+      <div class="eq-title">Bounded retreat</div>
+      <math display="block" aria-label="the infinity norm of q rec j plus 1 minus q rec j is at most epsilon r">
+        <mrow><msub><mrow><mo>&#x2016;</mo><msubsup><mi>&#x1D42A;</mi><mrow><mi>j</mi><mo>+</mo><mn>1</mn></mrow><mtext>rec</mtext></msubsup><mo>&minus;</mo><msubsup><mi>&#x1D42A;</mi><mi>j</mi><mtext>rec</mtext></msubsup><mo>&#x2016;</mo></mrow><mi>&infin;</mi></msub><mo>&le;</mo><msub><mi>&epsilon;</mi><mi>r</mi></msub></mrow>
+      </math>
+      <p>Recovery moves toward a reference with increments of at most &epsilon;<sub>r</sub> = 0.02&nbsp;rad and at most 16 commands; in simulation, three consecutive rejections trigger a protective stop.</p>
+    </div>
+  </div>
+
+  <div class="gate reveal" id="gate">
+    <svg class="gate-svg" role="img" aria-label="Illustrative step-level and chunk-level risk scores with the threshold tau r"></svg>
+    <div class="gate-side">
+      <div class="eq-title">Try the gate <span class="badge sim">illustrative scores</span></div>
+      <div class="gate-out exec">&rho; &lt; &tau;<sub>r</sub></div>
+      <p class="note" style="margin:0">Chunk risk &rho; = <b id="rho-out">0.00</b> &middot; threshold &tau;<sub>r</sub> = <b id="tau-out">0.40</b></p>
+      <label for="tau">Threshold &tau;<sub>r</sub></label>
+      <input id="tau" type="range" min="0.05" max="0.95" step="0.01" value="0.40" />
+      <div class="ctl-row" role="group" aria-label="Example candidates">
+        <button class="mini-btn" type="button" data-preset="0" aria-pressed="false">Smooth</button>
+        <button class="mini-btn" type="button" data-preset="1" aria-pressed="true">Contact</button>
+        <button class="mini-btn" type="button" data-preset="2" aria-pressed="false">Slow slip</button>
+      </div>
+      <p class="note small" id="gate-why" style="margin-top:10px"></p>
+      <p class="note small">These scores are made up to show how the readout works; they are not outputs of the model. The slider starts at 0.40, the threshold the paper uses in RoboTwin.</p>
+    </div>
+  </div>
+
+  <div class="spec-grid reveal">
+    <div class="spec"><div class="v">1.0B</div><div class="k">host policy (Efficient-WAM architecture): 0.8B video expert + 0.2B action expert</div></div>
+    <div class="spec"><div class="v">2 <small>steps</small></div><div class="k">video denoising for each imagined outcome (10 Euler steps for actions)</div></div>
+    <div class="spec hl"><div class="v">1.7M</div><div class="k">Safe-Guard parameters; it fuses 114 tokens of width 128 with a 3-layer Transformer</div></div>
+    <div class="spec hl"><div class="v">32 <small>ms</small></div><div class="k">added by Safe-Guard; the policy takes 92&nbsp;ms per decision</div></div>
+  </div>
+
+</section>
+
+<!-- ══ Data ══ -->
+<section class="card alt" id="data">
+  <p class="section-label">Data</p>
+  <h2 class="section-title">Hazards collected and labeled <span class="soft">by what physically happens.</span></h2>
+  <p class="section-body">
+    Expert demonstrations rarely contain collisions, slips or dropped objects. WAtcher's pipeline creates candidate chunks, executes them, and labels each window from what happened during execution, in RoboTwin&nbsp;2.0, in LIBERO, and on a real UR7e, where a human verifies the labels. Every label rests on a recorded event, not on the intervention that produced the candidate or on task failure.
+  </p>
+
+  <figure class="figure-wrap reveal">
+    <img class="fig-img zoomable" src="assets/images/fig-pipeline.webp" width="2600" height="710" loading="lazy"
+         alt="The autonomous hazard data pipeline: sample scenes, inject hazards, execute in batch with minimal rendering, replay and record contacts, joints and heights, auto-label with physical-event rules and LLM-agent review, producing labeled windows that train Safe-Guard. Bottom: hazard families grouped into unintended contact, loss of support, generic and semantic danger." />
+    <figcaption class="figure-caption">
+      <strong>Autonomous hazard data collection.</strong> Scenes are sampled from saved expert states, hazards are injected into the upcoming chunk, candidates run in parallel shards with minimal rendering, and any candidate that hits an event is replayed with full rendering to record views, joints, contacts and object heights. Physical-event rules label the window; an LLM coding agent reviews ambiguous ones and unresolved ones are removed.
+    </figcaption>
+  </figure>
+
+  <div class="hazard-types">
+    <div class="htype reveal"><div class="n">TYPE 1</div><div class="h">Unintended contact</div><div class="b">The robot or a held object hits the table, another object, or the robot itself.</div></div>
+    <div class="htype reveal"><div class="n">TYPE 2</div><div class="h">Loss of support</div><div class="b">An object drops after an early release, a slip, or a missed hanging.</div></div>
+    <div class="htype reveal"><div class="n">TYPE 3</div><div class="h">Generic execution error</div><div class="b">An offset, acceleration, arm delay or stale action, labeled by the same events or a motion-limit violation.</div></div>
+    <div class="htype reveal"><div class="n">TYPE 4</div><div class="h">Semantic danger</div><div class="b">A knife touching a person's hand, or a sharp object within 5&nbsp;cm of an animal model, which no contact threshold captures.</div></div>
+  </div>
+  <p class="not-hazard">Near-contact motion, intended grasps, and task failure alone are <b>not</b> hazards.</p>
+
+  <div class="kpi-row reveal">
+    <div class="kpi-card"><div class="kpi-number">25,434</div><div class="kpi-sublabel">labeled windows across RoboTwin&nbsp;2.0, LIBERO and the UR7e</div></div>
+    <div class="kpi-card"><div class="kpi-number">7,392</div><div class="kpi-sublabel">of them risky, each tied to a recorded event step</div></div>
+    <div class="kpi-card"><div class="kpi-number">95.7<span class="small">%</span></div><div class="kpi-sublabel">blind audit: two annotators agreed with the pipeline's labels on 300 random windows</div></div>
+    <div class="kpi-card"><div class="kpi-number">97.3<span class="small">%</span></div><div class="kpi-sublabel">the same audit on the 300-question benchmark</div></div>
+  </div>
+
+  <div class="subsection" id="showcase" style="margin-top:2.2rem">
+    <div class="subsection-head">
+      <h3 class="subsection-title">Hazard showcase</h3>
+    </div>
+    <p class="section-body">
+      Scenes built with the same simulator tooling to illustrate the hazard families. In each clip, the left half runs the hazardous branch and the right half switches, at the same fork, to a <b>scripted</b> retreat. These retreats are scripted for display rather than decided by Safe-Guard, and the clips are not part of any evaluation.
+    </p>
+    <div class="vgrid two">
+      <figure class="vcard pairv reveal">
+        <div class="media">
+          <video data-src="assets/videos/showcase/knife.mp4" poster="assets/images/showcase/knife.webp" muted loop playsinline preload="none" data-autoplay aria-label="Left: the knife continues its downstroke while a hand rests on the carrot. Right: the knife lifts and waits until the hand leaves."></video>
+          <span class="side-tag danger">hazard</span><span class="side-tag guarded" style="left:calc(50% + 6px)">scripted retreat</span>
+          <button class="expand-btn" type="button" data-expand="assets/videos/showcase/knife.mp4" data-caption="A hand reaches under the knife. Left: hazardous branch. Right: scripted retreat." aria-label="Enlarge: A hand reaches under the knife"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
+        </div>
+        <figcaption><div class="t">A hand reaches under the knife</div><div class="s">A stale downstroke continues and meets the hand (simulated contact, no injury model); the scripted branch lifts the knife and waits until the hand leaves.</div><div class="badges"><span class="badge hz">semantic danger</span><span class="badge scripted">scripted retreat</span></div></figcaption>
+      </figure>
+      <figure class="vcard pairv reveal">
+        <div class="media">
+          <video data-src="assets/videos/showcase/arms.mp4" poster="assets/images/showcase/arms.webp" muted loop playsinline preload="none" data-autoplay aria-label="Left: two arms carrying cans collide in mid-air. Right: both arms lift and return home."></video>
+          <span class="side-tag danger">hazard</span><span class="side-tag guarded" style="left:calc(50% + 6px)">scripted retreat</span>
+          <button class="expand-btn" type="button" data-expand="assets/videos/showcase/arms.mp4" data-caption="Two arms collide mid-air. Left: hazardous branch. Right: scripted retreat." aria-label="Enlarge: Two arms collide mid-air"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
+        </div>
+        <figcaption><div class="t">Two arms collide mid-air</div><div class="s">Both arms carry cans toward the centre and meet head-on; the scripted branch lifts both arms and returns home.</div><div class="badges"><span class="badge hz">contact</span><span class="badge scripted">scripted retreat</span></div></figcaption>
+      </figure>
+      <figure class="vcard pairv reveal">
+        <div class="media">
+          <video data-src="assets/videos/showcase/rack.mp4" poster="assets/images/showcase/rack.webp" muted loop playsinline preload="none" data-autoplay aria-label="Left: the held mug is pushed sideways into the blue rack, which topples. Right: the arm withdraws and the rack stays upright."></video>
+          <span class="side-tag danger">hazard</span><span class="side-tag guarded" style="left:calc(50% + 6px)">scripted retreat</span>
+          <button class="expand-btn" type="button" data-expand="assets/videos/showcase/rack.mp4" data-caption="A pushed mug topples the rack. Left: hazardous branch. Right: scripted retreat." aria-label="Enlarge: A pushed mug topples the rack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
+        </div>
+        <figcaption><div class="t">A pushed mug topples the rack</div><div class="s">A misaligned hanging motion pushes the held mug sideways into the rack, which falls over (close-up camera); the scripted branch withdraws and lifts.</div><div class="badges"><span class="badge hz">contact</span><span class="badge scripted">scripted retreat</span></div></figcaption>
+      </figure>
+      <figure class="vcard pairv reveal">
+        <div class="media">
+          <video data-src="assets/videos/showcase/bottles.mp4" poster="assets/images/showcase/bottles.webp" muted loop playsinline preload="none" data-autoplay aria-label="Left: a fast swing drives the open gripper through a row of bottles and into the table. Right: the bottles stay standing."></video>
+          <span class="side-tag danger">hazard</span><span class="side-tag guarded" style="left:calc(50% + 6px)">scripted retreat</span>
+          <button class="expand-btn" type="button" data-expand="assets/videos/showcase/bottles.mp4" data-caption="A fast swing knocks over a row of bottles. Left: hazardous branch. Right: scripted retreat." aria-label="Enlarge: A fast swing knocks over a row of bottles"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
+        </div>
+        <figcaption><div class="t">A fast swing knocks over a row of bottles</div><div class="s">A fast whip-swing drives the open gripper through a row of three bottles and into the table; the scripted branch lifts and returns home.</div><div class="badges"><span class="badge hz">contact</span><span class="badge scripted">scripted retreat</span></div></figcaption>
+      </figure>
+      <figure class="vcard pairv reveal">
+        <div class="media">
+          <video data-src="assets/videos/showcase/pedestal.mp4" poster="assets/images/showcase/pedestal.webp" muted loop playsinline preload="none" data-autoplay aria-label="Left: an arm shoves bottles off a raised pedestal. Right: the arms withdraw and the bottles stay."></video>
+          <span class="side-tag danger">hazard</span><span class="side-tag guarded" style="left:calc(50% + 6px)">scripted retreat</span>
+          <button class="expand-btn" type="button" data-expand="assets/videos/showcase/pedestal.mp4" data-caption="Bottles shoved off a pedestal. Left: hazardous branch. Right: scripted retreat." aria-label="Enlarge: Bottles shoved off a pedestal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
+        </div>
+        <figcaption><div class="t">Bottles shoved off a pedestal</div><div class="s">A dual-arm motion sweeps into the bottles standing on a raised pedestal; the scripted branch lifts and returns home.</div><div class="badges"><span class="badge hz">contact</span><span class="badge scripted">scripted retreat</span></div></figcaption>
+      </figure>
+      <figure class="vcard pairv reveal">
+        <div class="media">
+          <video data-src="assets/videos/showcase/tower.mp4" poster="assets/images/showcase/tower.webp" muted loop playsinline preload="none" data-autoplay aria-label="Left: the arm sweeps into a stacked block tower, which collapses. Right: the tower stays standing."></video>
+          <span class="side-tag danger">hazard</span><span class="side-tag guarded" style="left:calc(50% + 6px)">scripted retreat</span>
+          <button class="expand-btn" type="button" data-expand="assets/videos/showcase/tower.mp4" data-caption="An arm sweeps into a block tower. Left: hazardous branch. Right: scripted retreat." aria-label="Enlarge: An arm sweeps into a block tower"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
+        </div>
+        <figcaption><div class="t">An arm sweeps into a block tower</div><div class="s">The carried block swings into a stacked tower, which collapses; the scripted branch lifts away.</div><div class="badges"><span class="badge hz">contact</span><span class="badge scripted">scripted retreat</span></div></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Results ══ -->
+<section class="card" id="results">
+  <p class="section-label">Results</p>
+  <h2 class="section-title">Fewer hazards, <span class="soft">little cost in success.</span></h2>
+  <p class="section-body">
+    We test Safe-Guard as a detector on held-out benchmarks, then run the full system in closed loop, on two simulation suites, and on a UR7e robot. Success rate (SR) measures tasks; for detection we report the share of hazards detected (TPR), the share of safe candidates accepted (TNR&nbsp;=&nbsp;1&nbsp;&minus;&nbsp;FPR), and their mean, the balanced accuracy (BAcc), which does not depend on how many candidates are hazardous.
+  </p>
+
+  <!-- 3.1 detection -->
+  <div class="subsection" id="detection">
+    <div class="subsection-head">
+      <h3 class="subsection-title">Risk detection: ahead of every baseline</h3>
+      <div class="head-figure"><div class="big">94.2 <span class="vs">vs 73.0</span></div><div class="cap">300-Q BAcc: Safe-Guard vs best zero-shot MLLM</div></div>
+    </div>
+    <p class="section-body">
+      Each question of the held-out <b>300-question benchmark</b> (100 hazards, 200 safe; scenes, seeds and source groups separate from training) gives the current views, the robot state and a candidate chunk, and asks whether executing it records a hazardous event within the chunk (about 1&nbsp;s) or a fall within 0.5&nbsp;s after a release. The ten zero-shot MLLMs receive the meaning, units and timing of every dimension but no imagined frames, drawn gripper path, hazard rules or examples. To test on more windows that no detector has seen, every learned detector is also evaluated on a <b>blind set</b> of 1,352 new windows.
+    </p>
+
+    <div class="chart-card reveal" data-bars data-source="#t-detect" data-min="50" data-max="100" data-ticks="50,60,70,80,90,100" data-metric="q300" data-grouped="false">
+      <div class="chart-head">
+        <div>
+          <div class="chart-title">Balanced accuracy (%)</div>
+          <div class="chart-sub">Higher is better; axis starts at 50%, the score of always answering "safe".</div>
+        </div>
+        <div class="chart-tools">
+          <div class="seg small" role="group" aria-label="Choose split">
+            <button type="button" data-metric="q300" aria-pressed="true">300-question benchmark</button>
+            <button type="button" data-metric="blind" aria-pressed="false">Blind set</button>
+            <button type="button" data-metric="unseen" aria-pressed="false">Unseen tasks</button>
+          </div>
+        </div>
+      </div>
+      <div class="legend"><span><i class="lg-bar" style="background:var(--c-ours)"></i>Safe-Guard (ours)</span><span><i class="lg-bar" style="background:var(--c-other)"></i>Zero-shot MLLMs and monitors on our data</span></div>
+      <div class="bars" role="list"></div>
+      <div class="bar-axis" aria-hidden="true"><div></div><div class="ticks"></div><div></div></div>
+      <p class="note small bars-missing" style="margin:8px 0 0"></p>
+      <details class="table-toggle">
+        <summary>Show the table (Table 1 of the paper)</summary>
+        <div class="table-wrap">
+          <table id="t-detect">
+            <thead>
+              <tr class="group"><th></th><th>300-Q</th><th class="span" colspan="3">Blind set</th><th>Unseen</th></tr>
+              <tr><th>Detector</th><th>BAcc</th><th>BAcc</th><th>TPR</th><th>FPR</th><th>BAcc</th></tr>
+            </thead>
+            <tbody>
+              <tr class="group-row"><td colspan="6">Zero-shot MLLMs</td></tr>
+              <tr data-name="Claude Opus 5.5" data-group="Zero-shot MLLMs" data-v-q300="63.3" data-note="Zero-shot MLLM"><td>Claude Opus 5.5</td><td>63.3</td><td class="na" colspan="4"></td></tr>
+              <tr data-name="Gemini 4 Argon" data-group="Zero-shot MLLMs" data-v-q300="70.0" data-note="Zero-shot MLLM"><td>Gemini 4 Argon</td><td>70.0</td><td class="na" colspan="4"></td></tr>
+              <tr data-name="GPT-6-Astra" data-group="Zero-shot MLLMs" data-v-q300="72.5" data-note="Zero-shot MLLM"><td>GPT-6-Astra</td><td>72.5</td><td class="na" colspan="4"></td></tr>
+              <tr data-name="GPT-6.1-Sol" data-group="Zero-shot MLLMs" data-v-q300="73.0" data-note="Zero-shot MLLM"><td>GPT-6.1-Sol</td><td>73.0</td><td class="na" colspan="4"></td></tr>
+              <tr class="group-row"><td colspan="6">Monitors on our data</td></tr>
+              <tr data-name="FAIL-Detect-style" data-group="Monitors on our data" data-v-q300="65.4" data-v-blind="63.8" data-v-unseen="56.7" data-note="Needs no failure data"><td>FAIL-Detect-style</td><td>65.4</td><td>63.8</td><td>39.2</td><td>10.8</td><td>56.7</td></tr>
+              <tr data-name="Collision check (FK)" data-group="Monitors on our data" data-v-q300="75.3" data-v-blind="72.2" data-note="Forward-kinematics check with privileged geometry" data-note-unseen="Not applicable (untrained check)"><td>Collision check (FK)</td><td>75.3</td><td>72.2</td><td>48.3</td><td>3.9</td><td>&ndash;</td></tr>
+              <tr data-name="State + candidate MLP" data-group="Monitors on our data" data-v-q300="78.7" data-v-blind="74.4" data-v-unseen="60.6"><td>State + candidate MLP</td><td>78.7</td><td>74.4</td><td>70.3</td><td>21.0</td><td>60.6</td></tr>
+              <tr data-name="SAFE-style probe" data-group="Monitors on our data" data-v-q300="83.5" data-v-blind="81.8" data-v-unseen="66.4" data-note="Probe on policy features"><td>SAFE-style probe</td><td>83.5</td><td>81.8</td><td>78.6</td><td>15.3</td><td>66.4</td></tr>
+              <tr data-name="Fine-tuned Qwen3-VL-2B" data-group="Monitors on our data" data-v-q300="86.8" data-v-blind="84.4" data-v-unseen="69.2" data-note="LoRA fine-tuned"><td>Fine-tuned Qwen3-VL-2B</td><td>86.8</td><td>84.4</td><td>82.1</td><td>13.0</td><td>69.2</td></tr>
+              <tr data-name="ContactGuard-style" data-group="Monitors on our data" data-v-q300="89.6" data-v-blind="87.9" data-v-unseen="70.8" data-note="Monitor on predicted latent future embeddings"><td>ContactGuard-style</td><td>89.6</td><td>87.9</td><td>86.1</td><td>10.7</td><td>70.8</td></tr>
+              <tr data-name="Fine-tuned Qwen3-VL-8B" data-group="Monitors on our data" data-v-q300="91.1" data-v-blind="89.4" data-v-unseen="73.7" data-note="Reads our imagined frames and the head view with the gripper path drawn (FOREWARN-style)"><td>Fine-tuned Qwen3-VL-8B</td><td>91.1</td><td>89.4</td><td>88.3</td><td>9.3</td><td>73.7</td></tr>
+              <tr class="highlight-row" data-name="Safe-Guard (ours)" data-group="Monitors on our data" data-ours data-v-q300="94.2" data-v-blind="92.1" data-v-unseen="75.9" data-note-q300="Three-seed mean; the selected seed detects 94 of 100 hazards at 10 false alarms on 200 safe candidates (94.5%)" data-note-blind="Three-seed mean; selected seed: TPR 92.5%, FPR 8.1% (613 hazardous, 739 safe windows)" data-note-unseen="Three-seed mean on four unseen tasks"><td>Safe-Guard (ours)</td><td class="best">94.2</td><td class="best">92.1</td><td class="best">92.5</td><td>8.1</td><td class="best">75.9</td></tr>
+            </tbody>
+          </table>
+        </div>
+    <p class="table-caption">Risk detection (%). 300-Q: 300-question benchmark. Blind set: 1,352 windows, 613 hazardous. Unseen: four unseen tasks. Gray: not run on these full splits. BAcc: three-seed mean for learned detectors, single run otherwise; TPR, FPR: selected seed.</p>
+      </details>
+    </div>
+
+    <ul class="findings">
+      <li><b>300-question benchmark.</b> Safe-Guard averages 94.2% BAcc; its selected seed detects 94 of 100 hazards at 10 false alarms on 200 safe candidates (94.5%). The ten zero-shot MLLMs reach at most 73.0%: they handle hazards explicit in the commands but mostly miss collisions commanded as bimanual joint targets and mug&ndash;rack contacts, and on knife&ndash;hand questions react to the knife rather than the hand's position. Of the 26 hazards that at least eight MLLMs miss, Safe-Guard detects 22.</li>
+      <li><b>Blind set.</b> 92.1% BAcc against 89.4% for the fine-tuned 8B VLM and 87.9% for the ContactGuard-style monitor, both tuned with Safe-Guard's search budget of 24 configurations; Safe-Guard's selected seed leads them by 2.7 and 4.5 points.</li>
+      <li><b>Richer prompts help MLLMs, but not enough.</b> With richer inputs and one example per category, the best MLLM reaches 81.0%.</li>
+    </ul>
+
+
+  </div>
+
+  <!-- 3.2 where MLLMs fail -->
+  <div class="subsection" id="mllm-failures">
+    <div class="subsection-head">
+      <h3 class="subsection-title">Where zero-shot MLLMs fail</h3>
+      <div class="head-figure"><div class="big">22 <span class="vs">of 26</span></div><div class="cap">hazards missed by at least eight of ten MLLMs that Safe-Guard detects</div></div>
+    </div>
+    <p class="section-body">
+      The MLLMs handle hazards that are explicit in the commands but mostly miss collisions commanded as bimanual joint targets. In the two same-state pairs of the paper's Fig.&nbsp;4, one candidate collides and its twin does not. Only one MLLM flags the bowl hazard, and the three that flag the microphone hazard also flag its safe twin, so no MLLM separates that pair.
+    </p>
+    <figure class="figure-wrap reveal" style="max-width:920px;margin-left:auto;margin-right:auto">
+      <img class="fig-img zoomable" src="assets/images/fig-t300-cases.webp" width="1700" height="888" loading="lazy"
+           alt="Two RoboTwin states, stack bowls and handover mic, each with a red hazardous and a green safe candidate chunk; Safe-Guard rejects the red chunks and passes the green ones, while most MLLMs fail." />
+      <figcaption class="figure-caption">
+        <strong>Hazardous (red) and safe (green) candidates, one RoboTwin state per row,</strong> chosen to show MLLM failures. Left: recorded gripper paths (a side view that no model reads). Middle and right: outcomes 0.64&nbsp;s later; filled dots mark MLLMs flagging a hazard. One MLLM flags the red bowl chunk; three flag both mic chunks.
+      </figcaption>
+    </figure>
+    <div class="mpair reveal">
+      <div class="mpair-head"><b>Stacking bowls</b><span>same state, two candidate chunks</span></div>
+      <div class="mpair-grid">
+        <figure class="mcase input">
+          <div class="media"><img src="assets/images/mllm/case_200563-head.webp" width="320" height="240" loading="lazy" alt="Head-camera view of the current state, one of the three views the models receive" /></div>
+          <figcaption><b>What every MLLM receives:</b> this head view, two wrist views, the robot state and the candidate as 16&nbsp;&times;&nbsp;14 joint targets, with the meaning and units of every dimension.</figcaption>
+        </figure>
+        <figure class="mcase hazard">
+          <div class="media"><video data-src="assets/videos/mllm/case_200563.mp4" poster="assets/images/mllm/case_200563-start.webp" muted loop playsinline preload="none" data-autoplay aria-label="Hazardous candidate: the closed gripper drives down and both bowls tumble"></video><span class="speed-pill">0.5&times;</span></div>
+          <figcaption><span class="pill hazard">Hazard</span> The closed gripper keeps driving down instead of releasing: both bowls tip and tumble.<div class="mvotes" role="img" aria-label="1 of 10 MLLMs flag this hazard (GPT-6-Luna)."><i class="pass" title="GPT-6.1-Sol: says safe"></i><i class="pass" title="GPT-6-Astra: says safe"></i><i class="pass" title="Gemini 4 Argon: says safe"></i><i class="pass" title="Qwen 3.8 Flash: says safe"></i><i class="flag" title="GPT-6-Luna: flags a hazard"></i><i class="pass" title="DeepSeek V4.1 Flash: says safe"></i><i class="pass" title="Kimi K3: says safe"></i><i class="pass" title="Claude Sonnet 5.5: says safe"></i><i class="pass" title="Claude Opus 5.5: says safe"></i><i class="pass" title="Cosmos3-Super: says safe"></i></div><div class="votes-cap">1 of 10 MLLMs flag this hazard (GPT-6-Luna).</div></figcaption>
+        </figure>
+        <figure class="mcase safe">
+          <div class="media"><video data-src="assets/videos/mllm/case_201212.mp4" poster="assets/images/mllm/case_200563-start.webp" muted loop playsinline preload="none" data-autoplay aria-label="Safe candidate: the gripper opens and the bowl nests"></video><span class="speed-pill">0.5&times;</span></div>
+          <figcaption><span class="pill safe">Safe</span> The gripper opens in place: the bowl is released and nests in the lower bowl.<div class="mvotes" role="img" aria-label="No MLLM raises an alarm (correct)."><i class="pass" title="GPT-6.1-Sol: says safe"></i><i class="pass" title="GPT-6-Astra: says safe"></i><i class="pass" title="Gemini 4 Argon: says safe"></i><i class="pass" title="Qwen 3.8 Flash: says safe"></i><i class="pass" title="GPT-6-Luna: says safe"></i><i class="pass" title="DeepSeek V4.1 Flash: says safe"></i><i class="pass" title="Kimi K3: says safe"></i><i class="pass" title="Claude Sonnet 5.5: says safe"></i><i class="pass" title="Claude Opus 5.5: says safe"></i><i class="pass" title="Cosmos3-Super: says safe"></i></div><div class="votes-cap">No MLLM raises an alarm (correct).</div></figcaption>
+        </figure>
+      </div>
+    </div>
+    <div class="mpair reveal">
+      <div class="mpair-head"><b>Handing over a microphone</b><span>same state, two candidate chunks</span></div>
+      <div class="mpair-grid">
+        <figure class="mcase input">
+          <div class="media"><img src="assets/images/mllm/case_201155-head.webp" width="320" height="240" loading="lazy" alt="Head-camera view of the current state, one of the three views the models receive" /></div>
+          <figcaption><b>What every MLLM receives:</b> this head view, two wrist views, the robot state and the candidate as 16&nbsp;&times;&nbsp;14 joint targets, with the meaning and units of every dimension.</figcaption>
+        </figure>
+        <figure class="mcase hazard">
+          <div class="media"><video data-src="assets/videos/mllm/case_201155.mp4" poster="assets/images/mllm/case_201155-start.webp" muted loop playsinline preload="none" data-autoplay aria-label="Hazardous candidate: the arm folds down and presses the microphone into the table"></video><span class="speed-pill">0.5&times;</span></div>
+          <figcaption><span class="pill hazard">Hazard</span> The arm folds down and presses the gripper and microphone into the table.<div class="mvotes" role="img" aria-label="3 of 10 MLLMs flag this hazard (GPT-6.1-Sol, GPT-6-Astra, Gemini 4 Argon)."><i class="flag" title="GPT-6.1-Sol: flags a hazard"></i><i class="flag" title="GPT-6-Astra: flags a hazard"></i><i class="flag" title="Gemini 4 Argon: flags a hazard"></i><i class="pass" title="Qwen 3.8 Flash: says safe"></i><i class="pass" title="GPT-6-Luna: says safe"></i><i class="pass" title="DeepSeek V4.1 Flash: says safe"></i><i class="pass" title="Kimi K3: says safe"></i><i class="pass" title="Claude Sonnet 5.5: says safe"></i><i class="pass" title="Claude Opus 5.5: says safe"></i><i class="pass" title="Cosmos3-Super: says safe"></i></div><div class="votes-cap">3 of 10 MLLMs flag this hazard (GPT-6.1-Sol, GPT-6-Astra, Gemini 4 Argon).</div></figcaption>
+        </figure>
+        <figure class="mcase safe">
+          <div class="media"><video data-src="assets/videos/mllm/case_201181.mp4" poster="assets/images/mllm/case_201155-start.webp" muted loop playsinline preload="none" data-autoplay aria-label="Safe candidate: the microphone stops just above the table"></video><span class="speed-pill">0.5&times;</span></div>
+          <figcaption><span class="pill safe">Safe</span> The same motion at about 70% of the size: the microphone stops just above the table.<div class="mvotes" role="img" aria-label="3 of 10 MLLMs raise a false alarm (GPT-6.1-Sol, GPT-6-Astra, Gemini 4 Argon)."><i class="flag" title="GPT-6.1-Sol: flags a hazard"></i><i class="flag" title="GPT-6-Astra: flags a hazard"></i><i class="flag" title="Gemini 4 Argon: flags a hazard"></i><i class="pass" title="Qwen 3.8 Flash: says safe"></i><i class="pass" title="GPT-6-Luna: says safe"></i><i class="pass" title="DeepSeek V4.1 Flash: says safe"></i><i class="pass" title="Kimi K3: says safe"></i><i class="pass" title="Claude Sonnet 5.5: says safe"></i><i class="pass" title="Claude Opus 5.5: says safe"></i><i class="pass" title="Cosmos3-Super: says safe"></i></div><div class="votes-cap">3 of 10 MLLMs raise a false alarm (GPT-6.1-Sol, GPT-6-Astra, Gemini 4 Argon).</div></figcaption>
+        </figure>
+      </div>
+    </div>
+    <p class="note small">Outcome clips come from a side review camera that no model reads, slowed to half speed and starting at the decision time. A filled dot marks an MLLM whose hazard probability is at least 0.5; order: GPT-6.1-Sol, GPT-6-Astra, Gemini 4 Argon, Qwen 3.8 Flash, GPT-6-Luna, DeepSeek V4.1 Flash, Kimi K3, Claude Sonnet 5.5, Claude Opus 5.5, Cosmos3-Super. Answers are the per-question outputs behind the paper's zero-shot results.</p>
+  </div>
+
+
+  <!-- 3.3 imagination contribution -->
+  <div class="subsection" id="imagined-future">
+    <div class="subsection-head">
+      <h3 class="subsection-title">What the imagined future contributes</h3>
+      <div class="head-figure"><div class="big">+4.8 <span class="vs">vs +1.1</span></div><div class="cap">BAcc points: candidate-conditioned vs nominal future</div></div>
+    </div>
+    <p class="section-body">
+      Retraining the head with each source of future frames and comparing on a validation split shows that the future helps mainly when it shows <b>the candidate's</b> outcome. Imagining each candidate's outcome is the key ingredient, and the policy's own expert provides it without another model.
+    </p>
+    <div class="kpi-row reveal">
+      <div class="kpi-card"><div class="kpi-number guard">+4.8</div><div class="kpi-sublabel">BAcc points over current views alone, from the candidate-conditioned future</div></div>
+      <div class="kpi-card"><div class="kpi-number">+1.1</div><div class="kpi-sublabel">from the nominal future, imagined for the policy's own actions</div></div>
+      <div class="kpi-card"><div class="kpi-number guard">+7.9 <span class="small">vs +2.6</span></div><div class="kpi-sublabel">gain for losses of support vs contacts: a slip or a fall shows only in the outcome</div></div>
+      <div class="kpi-card"><div class="kpi-number guard">89.7 <span class="small">vs 87.6</span></div><div class="kpi-sublabel">BAcc with the policy's own video expert vs a separately trained world model</div></div>
+    </div>
+  </div>
+
+  <!-- 3.4 closed loop -->
+  <div class="subsection" id="closed-loop">
+    <div class="subsection-head">
+      <h3 class="subsection-title">Closed loop: fewer hazards, success kept</h3>
+      <div class="head-figure"><div class="big">27.0 &rarr; 10.8%</div><div class="cap">hazardous trials, 400 paired trials on training tasks in new scenes</div></div>
+    </div>
+    <p class="section-body">
+      We run the full system on four training tasks of Safe-Guard in new scenes (block-size ranking, bimanual handover, mug hanging, two-block stacking). Each rejected chunk is replaced by a retreat, so rejecting more often avoids more hazards even when the wrong chunks are rejected. Every monitor and a random-rejection baseline therefore reject <b>the same share of chunks</b> as Safe-Guard, so the remaining differences reflect which chunks each one rejects.
+    </p>
+
+    <div class="chart-card reveal" data-dumbbell data-source="#t-dumbbell" data-max="80" data-ticks="0,20,40,60,80">
+      <div class="chart-head">
+        <div>
+          <div class="chart-title">Hazardous trials (%), policy only &rarr; with Safe-Guard</div>
+          <div class="chart-sub">Lower is better. Hover or focus a row for details.</div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="lg-ring" style="border-color:var(--c-before)"></i>Policy only</span>
+        <span><i class="lg-dia" style="background:var(--c-other)"></i>ContactGuard-style (same rejection rate in simulation)</span>
+        <span><i class="lg-dot" style="background:var(--c-ours)"></i>With Safe-Guard</span>
+      </div>
+      <svg class="dumbbell" role="list" aria-label="Hazardous trials with and without Safe-Guard across six settings"></svg>
+      <details class="table-toggle">
+        <summary>Show the numbers</summary>
+        <div class="table-wrap">
+          <table id="t-dumbbell">
+            <thead><tr><th>Setting</th><th>Policy only</th><th>ContactGuard-style</th><th>With Safe-Guard</th></tr></thead>
+            <tbody>
+              <tr data-name="RoboTwin, clean" data-sub="4 tasks × 20 trials" data-before="21.3" data-cg="11.3" data-after="6.3" data-detail="Random rejection at the same rate: 18.8%. Task success 86.3% → 88.8%."><td>RoboTwin, clean (4 tasks &times; 20 trials)</td><td>21.3</td><td>11.3</td><td class="best">6.3</td></tr>
+              <tr data-name="RoboTwin, randomized" data-sub="4 tasks × 20 trials" data-before="27.5" data-cg="15.0" data-after="10.0" data-detail="Random rejection at the same rate: 25.0%. Task success 78.8% → 82.5%."><td>RoboTwin, randomized (4 tasks &times; 20 trials)</td><td>27.5</td><td>15.0</td><td class="best">10.0</td></tr>
+              <tr data-name="Paired run, training tasks" data-sub="400 randomized trials" data-before="27.0" data-cg="15.3" data-after="10.8" data-detail="Nominal future: 14.8%; without future frames: 16.8%."><td>Paired run, training tasks in new scenes (400 trials)</td><td>27.0</td><td>15.3</td><td class="best">10.8</td></tr>
+              <tr data-name="Four unseen tasks" data-sub="100 paired trials each" data-before="29.8" data-cg="21.0" data-after="17.3"><td>Four unseen tasks (100 paired trials each)</td><td>29.8</td><td>21.0</td><td class="best">17.3</td></tr>
+              <tr data-name="Fast-WAM-Joint as the policy" data-sub="retrained Safe-Guard" data-before="25.8" data-cg="16.0" data-after="11.3" data-detail="Safe-Guard also serves another WAM."><td>Fast-WAM-Joint as the policy, retrained Safe-Guard</td><td>25.8</td><td>16.0</td><td class="best">11.3</td></tr>
+              <tr data-name="Real UR7e, staged hazards" data-sub="3 scenarios × 20 layouts" data-before="71.7" data-cg="18.3" data-after="10.0" data-detail="43 → 6 of 60 runs (adapted ContactGuard-style: 11, threshold set on validation windows rather than rate-matched; depth-based collision check: 19; without imagined frames: 13)."><td>Real UR7e, staged hazards (60 runs)</td><td>71.7 <span class="pm">(43/60)</span></td><td>18.3 <span class="pm">(11/60)</span></td><td class="best">10.0 <span class="pm">(6/60)</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+    <p class="table-caption">Hazardous trials (%). Rows 1&ndash;2: Table 2 of the paper (20 trials per task, four tasks). Rows 3&ndash;5: paired runs from the paper's closed-loop section. Row 6: staged hazards on the UR7e (counts out of 60 runs, from the real-robot section).</p>
+      </details>
+    </div>
+
+    <div class="table-wrap reveal">
+      <table>
+        <thead>
+          <tr class="group"><th></th><th class="span" colspan="2">Clean</th><th class="span" colspan="2">Randomized</th></tr>
+          <tr><th>Execution</th><th>Hazard &darr;</th><th>SR &uarr;</th><th>Hazard &darr;</th><th>SR &uarr;</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Policy only</td><td>21.3</td><td>86.3</td><td>27.5</td><td>78.8</td></tr>
+          <tr><td>+ random rejection</td><td>18.8</td><td>85.0</td><td>25.0</td><td>77.5</td></tr>
+          <tr><td>+ ContactGuard-style</td><td>11.3</td><td>87.5</td><td>15.0</td><td>81.3</td></tr>
+          <tr><td>+ Safe-Guard w/o future</td><td>12.5</td><td>87.5</td><td>16.3</td><td>80.0</td></tr>
+          <tr class="highlight-row"><td>+ Safe-Guard</td><td class="best">6.3</td><td class="best">88.8</td><td class="best">10.0</td><td class="best">82.5</td></tr>
+          <tr class="muted-row"><td>+ perfect detector</td><td>2.5</td><td>90.0</td><td>3.8</td><td>85.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-caption">Closed loop on four RoboTwin tasks (%; 20 trials per task). Monitors and random rejection reject as many chunks as Safe-Guard; the perfect detector rejects exactly the hazardous ones. (Table 2 of the paper.)</p>
+
+    <ul class="findings">
+      <li><b>Which chunks, not how many.</b> Random rejection at Safe-Guard's rate still leaves 18.8% and 25.0% hazardous trials, so the advantage comes from which chunks Safe-Guard rejects.</li>
+      <li><b>Losses of support, not just contacts.</b> An analytic collision layer with privileged geometry (the FK check plus joint-limit and table bounds) at the same rejection rate prevents most contacts (52 &rarr; 11 of 400 trials) but few losses of support (56 &rarr; 49), whereas Safe-Guard also prevents them (56 &rarr; 25).</li>
+      <li><b>It catches more hazards.</b> Replaying every chunk at similar false-alarm rates (5.3% vs 5.4%), Safe-Guard rejects 82.0% of the hazardous proposals and ContactGuard-style 69.9%.</li>
+      <li><b>Another WAM.</b> With Fast-WAM-Joint (the Fast-WAM variant whose video and action tokens attend to each other) as the policy, a retrained Safe-Guard lowers hazardous trials from 25.8% to 11.3%, against 16.0% for ContactGuard-style.</li>
+    </ul>
+  </div>
+
+  <!-- 3.5 simulation -->
+  <div class="subsection" id="simulation">
+    <div class="subsection-head">
+      <h3 class="subsection-title">Simulation: on par with leading WAMs at 1B parameters</h3>
+      <div class="head-figure"><div class="big">90.4 <span class="vs">/ 82.4</span></div><div class="cap">% avg. success, RoboTwin&nbsp;2.0 / ManiSkill3</div></div>
+    </div>
+    <p class="section-body">
+      On RoboTwin&nbsp;2.0, one multi-task policy is evaluated in 100 trials per task in the clean and randomized settings, averaged over 3 training seeds; WAtcher and every baseline we reproduce run on SAPIEN&nbsp;3.0.3. WAtcher reaches 91.0% clean and 89.8% randomized, on par with the strongest WAMs, with a 1B-parameter policy that takes 92&nbsp;ms per decision. On seven ManiSkill3 tasks with only 10 demonstrations each, its average success (82.4%) is the highest, on par with &pi;<sub>0.5</sub> (81.1%). Removing Safe-Guard changes success little (90.8% and 89.7% on RoboTwin&nbsp;2.0).
+    </p>
+
+    <div class="table-wrap reveal">
+      <table>
+        <thead><tr><th>Method</th><th>Clean</th><th>Random</th><th>Avg.</th><th>Params</th></tr></thead>
+        <tbody>
+          <tr><td>&pi;<sub>0</sub><sup class="mk">&dagger;</sup></td><td>65.9</td><td>58.4</td><td>62.2</td><td>3.3B</td></tr>
+          <tr><td>&pi;<sub>0.5</sub><sup class="mk">&dagger;</sup></td><td>82.7</td><td>76.8</td><td>79.8</td><td>3.3B</td></tr>
+          <tr><td>OpenVLA-OFT<sup class="mk">*</sup></td><td>15.6</td><td>14.7</td><td>15.2</td><td>7B</td></tr>
+          <tr><td>StarVLA-&alpha; (2B)</td><td>76.8</td><td>79.1</td><td>77.9</td><td class="second">2B</td></tr>
+          <tr><td>ABot-M0</td><td>86.1</td><td>85.1</td><td>85.6</td><td>4.2B</td></tr>
+          <tr><td>LingBot-VLA</td><td>86.5</td><td>85.3</td><td>85.9</td><td>4B</td></tr>
+          <tr><td>Diffusion Policy<sup class="mk">*</sup></td><td>41.8</td><td>37.9</td><td>39.8</td><td>&ndash;</td></tr>
+          <tr><td>Motus</td><td>88.7</td><td>87.0</td><td>87.8</td><td>8B</td></tr>
+          <tr><td>UWM<sup class="mk">&dagger;</sup></td><td>81.7</td><td>78.6</td><td>80.2</td><td>5B</td></tr>
+          <tr><td>GigaWorld-Policy</td><td>86.4</td><td>85.0</td><td>85.7</td><td>5B</td></tr>
+          <tr><td>AHA-WAM<sup class="mk">*</sup></td><td class="best">91.8</td><td>90.0</td><td class="best">90.9</td><td>7.2B</td></tr>
+          <tr><td>Fast-WAM<sup class="mk">*</sup></td><td>90.9</td><td class="second">90.2</td><td>90.6</td><td>6B</td></tr>
+          <tr><td>LingBot-VA<sup class="mk">*</sup></td><td class="second">91.1</td><td class="best">90.4</td><td class="second">90.8</td><td>5.3B</td></tr>
+          <tr><td>Cosmos3-Nano<sup class="mk">*</sup></td><td>86.3</td><td>85.5</td><td>85.9</td><td>16B</td></tr>
+          <tr class="muted-row"><td>WAtcher w/o Safe-Guard</td><td>90.8</td><td>89.7</td><td>90.3</td><td>1B</td></tr>
+          <tr class="highlight-row"><td>WAtcher (ours)</td><td>91.0</td><td>89.8</td><td>90.4</td><td class="best">1B</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-caption">Average success (%) on the 50 RoboTwin&nbsp;2.0 tasks (clean, randomized, mean). Params exclude text encoders. Best in bold, second underlined (w/o-Safe-Guard row not ranked). Unmarked baselines: published results. <sup>*</sup>Our runs on SAPIEN&nbsp;3.0.3, like WAtcher. <sup>&dagger;</sup>Third-party runs: &pi;<sub>0</sub>, &pi;<sub>0.5</sub> from LingBot-VA; UWM on Wan2.2-5B. (Table 3 of the paper.)</p>
+
+    <div class="table-wrap reveal">
+      <table>
+        <thead><tr><th>Method</th><th>LiftPeg</th><th>Pick</th><th>Poke</th><th>Pull</th><th>PullTool</th><th>Push</th><th>Stack</th><th>Avg.</th></tr></thead>
+        <tbody>
+          <tr><td>DP</td><td>78</td><td class="best">91</td><td class="best">94</td><td class="best">96</td><td class="best">51</td><td class="second">99</td><td>35</td><td>77.7 <span class="pm">&plusmn;2.1</span></td></tr>
+          <tr><td>&pi;<sub>0.5</sub></td><td class="second">86</td><td>89</td><td>80</td><td>83</td><td>42</td><td class="second">99</td><td class="best">89</td><td class="second">81.1 <span class="pm">&plusmn;2.1</span></td></tr>
+          <tr><td>OpenVLA-OFT</td><td>12</td><td>6</td><td>1</td><td>59</td><td>0</td><td>0</td><td>0</td><td>11.1 <span class="pm">&plusmn;2.2</span></td></tr>
+          <tr><td>StarVLA-GR00T</td><td>33</td><td>29</td><td>79</td><td>66</td><td>2</td><td>49</td><td>15</td><td>39.0 <span class="pm">&plusmn;3.0</span></td></tr>
+          <tr><td>Fast-WAM</td><td>58</td><td>86</td><td>88</td><td>82</td><td>38</td><td>96</td><td>30</td><td>68.3 <span class="pm">&plusmn;1.8</span></td></tr>
+          <tr><td>LingBot-VA</td><td class="best">88</td><td class="second">90</td><td>76</td><td>88</td><td>45</td><td class="best">100</td><td>69</td><td>79.4 <span class="pm">&plusmn;2.3</span></td></tr>
+          <tr><td>Motus</td><td>36</td><td>84</td><td>81</td><td>78</td><td>42</td><td>94</td><td>37</td><td>64.6 <span class="pm">&plusmn;3.2</span></td></tr>
+          <tr><td>Cosmos3-Nano</td><td>44</td><td>85</td><td class="best">94</td><td>83</td><td>6</td><td class="second">99</td><td>2</td><td>59.0 <span class="pm">&plusmn;3.1</span></td></tr>
+          <tr class="highlight-row"><td>WAtcher (ours)</td><td>84</td><td>89</td><td class="second">92</td><td class="second">90</td><td class="second">49</td><td>97</td><td class="second">76</td><td class="best">82.4 <span class="pm">&plusmn;2.0</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-caption">ManiSkill3 success (%) with 10 demonstrations per task (5 seeds &times; 20 trials; mean&plusmn;std over seeds), all run by us. DP: Diffusion Policy. Best in bold, second underlined. (Table 4 of the paper.)</p>
+
+  </div>
+
+  <!-- real world -->
+  <div class="subsection" id="real-world">
+    <div class="subsection-head">
+      <h3 class="subsection-title">Real robot: best average success, 43 &rarr; 6 staged hazards</h3>
+      <div class="head-figure"><div class="big">74.0 <span class="vs">vs 59.5</span></div><div class="cap">% avg. success over 5 UR7e tasks, ours vs &pi;<sub>0.5</sub></div></div>
+    </div>
+    <p class="section-body">
+      We evaluate five UR7e tasks with 50 demonstrations per task for every method and 4&nbsp;&times;&nbsp;10 trials per task (4 training seeds, 10 rollouts each). With Safe-Guard on, WAtcher succeeds in 148 of its 200 trials (74.0%), 14.5 points above &pi;<sub>0.5</sub> and well ahead of the WAM baselines Fast-WAM (48.5%) and DiT4DiT (29.0%); its policy alone reaches 75.5%.
+    </p>
+
+    <figure class="figure-wrap reveal">
+      <img class="fig-img zoomable" src="assets/images/fig-realtasks.webp" width="2200" height="1302" loading="lazy"
+           alt="The UR7e platform with an external camera and two wrist cameras, and the five tasks: block pushing, cup stacking, ring on peg, cup over block and fruit grasping, each shown from the external and wrist cameras." />
+      <figcaption class="figure-caption">
+        <strong>The UR7e platform and its five tasks.</strong> (a) A UR7e arm with a parallel gripper, two gripper-mounted wrist cameras, and an external camera. (b)&ndash;(f) Block pushing, cup stacking, ring on peg, cup over block, and fruit grasping: one time step of one teleoperated training demonstration per task, from the three cameras the policy reads (external camera on top, cropped around the gripper; wrist cameras below).
+      </figcaption>
+    </figure>
+
+    <div class="table-wrap reveal">
+      <table>
+        <thead><tr><th>Method</th><th>Push</th><th>Stack</th><th>Ring</th><th>Cover</th><th>Fruit</th><th>Avg.</th></tr></thead>
+        <tbody>
+          <tr><td>DP</td><td>27.5</td><td>12.5</td><td>0.0</td><td>10.0</td><td>17.5</td><td>13.5</td></tr>
+          <tr><td>DiT4DiT</td><td>37.5</td><td>32.5</td><td>5.0</td><td>25.0</td><td>45.0</td><td>29.0</td></tr>
+          <tr><td>&pi;<sub>0.5</sub></td><td class="best">75.0</td><td>62.5</td><td>22.5</td><td>52.5</td><td>85.0</td><td>59.5</td></tr>
+          <tr><td>Fast-WAM</td><td>62.5</td><td>40.0</td><td>10.0</td><td>57.5</td><td>72.5</td><td>48.5</td></tr>
+          <tr class="muted-row"><td>WAtcher w/o Safe-Guard</td><td>77.5</td><td>80.0</td><td>52.5</td><td>72.5</td><td>95.0</td><td>75.5</td></tr>
+          <tr class="highlight-row"><td>WAtcher (ours)</td><td>72.5</td><td class="best">82.5</td><td class="best">50.0</td><td class="best">70.0</td><td class="best">95.0</td><td class="best">74.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-caption">UR7e success (%; 40 trials per task) on block pushing, cup stacking, ring on peg, cup over block, and fruit grasping. Best in bold (w/o-Safe-Guard row not ranked). (Table 6 of the paper.)</p>
+
+    <p class="section-body">
+      <b>Safety on the real robot.</b> We stage three hazard scenarios with 20 paired layouts each and adapt Safe-Guard on 258 human-verified pipeline windows. Counted from video by two observers blind to the condition, hazards fall from <b>43 to 6 of 60 runs</b>, against 19 for a depth-based collision check, 13 without imagined frames, and 11 for an adapted ContactGuard-style monitor. Safe-Guard raises 3 false alarms in 60 obstacle-free controls.
+    </p>
+  </div>
+</section>
+
+<!-- ══ Citation ══ -->
+<section class="card alt" id="citation">
+  <p class="section-label">Citation</p>
+  <h2 class="section-title">BibTeX</h2>
+  <p class="section-body">If you find WAtcher useful in your research, please cite our paper.</p>
+  <div class="citation-block reveal">
+    <button class="copy-btn" id="copy-btn" type="button">Copy</button>
+    <code id="bibtex">@misc{shan2026watcher,
+  title={&#123;WAtcher}: Watching Ahead for Safe Robotic Manipulation with Efficient World-Action Models},
+  author={Shan, Ziyu and Ma, Xiao and Yu, Kangrui and Wang, Changjie and
+          Wu, Gaoyuan and Yang, Zaijia and Zhang, Chuanrui and Li, Qirui and
+          Zhang, Yanbo and Wang, Duomin and Wang, Ziwei},
+  year={2026},
+  howpublished={\url{https://zyshan0929.github.io/WAtcher/}}
+}
+</code>
+  </div>
+  <p class="closing" style="margin-top:2.6rem">World-action models with joint attention and decoupled noise levels already contain the forward model a safety check needs. <span class="soft">WAtcher has the policy imagine each chunk's outcome first, and lets the robot act only when that outcome looks safe.</span></p>
+</section>
+
+</main>
+
+<!-- ══ Footer ══ -->
+<footer class="site-footer">
+  <p>
+    WAtcher &middot; 2026 &middot;
+    <a href="https://zyshan0929.github.io">Ziyu Shan</a>
+  </p>
+  <p class="footer-sub">
+    All results on this page come from the paper; the risk scores on the demo wall come from development checkpoints (see the note under the wall). Simulation footage is rendered in RoboTwin&nbsp;2.0 and LIBERO; each environment and its assets keep their own licenses.
+  </p>
+</footer>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged view">
+  <div class="lightbox-inner">
+    <button class="lightbox-close" type="button" aria-label="Close">&times;</button>
+    <div class="lightbox-media"></div>
+    <p class="lightbox-cap"></p>
+  </div>
+</div>
+
+<script src="assets/script.js"></script>
+</body>
+</html>

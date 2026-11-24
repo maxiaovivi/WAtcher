@@ -1,27 +1,46 @@
 # WAtcher
 
-**在 RoboTwin 中执行 Efficient-WAM 任务，并在每段动作执行前评估风险。**
+**Watching Ahead for Safe Robotic Manipulation with Efficient World-Action Models**
 
-当前主分支是 **RoboTwin-only**：官方 Efficient-WAM-RT 14维策略、原始仿真安全头、同步风险门控和实际模拟器执行循环。代码、许可证和测试保存在仓库；模型权重、场景资产和实验数据由本地配置提供。
+[Project page](site/index.html) · Paper (coming soon) · 300-question benchmark (coming soon on Hugging Face)
+
+![WAtcher at a glance](site/assets/images/fig-teaser.webp)
+
+WAtcher lets a world-action model (WAM) check every candidate action chunk *before* it is executed. A
+lightweight, detachable safety head scores the chunk, and risky chunks never reach the simulator.
+
+This repository contains the RoboTwin implementation: the official 14-D Efficient-WAM-RT policy, a
+simulation safety head, a synchronous risk gate, and a closed loop that drives a real RoboTwin task.
+
+> **Scope of this code.** The safety head shipped here is the original *06* development checkpoint. It reads
+> the current camera views, the robot state and the candidate chunk; it does **not** yet consume imagined
+> future frames, and guard mode stops the episode instead of executing a bounded retreat. The Safe-Guard
+> training code and the full imagined-outcome pipeline described in the paper are not part of this release
+> yet. Numbers on the project page are paper results, not outputs of this repository.
+
+## How it works
 
 ```mermaid
 flowchart LR
-  O[RoboTwin get_obs: 三相机与当前目标状态] --> W[Efficient-WAM-RT]
-  W --> A[16 × 14 绝对关节目标]
-  A --> P[可选：在评分前限制夹爪范围]
-  O --> S[Safety Head]
+  O[RoboTwin get_obs: three cameras + current targets] --> W[Efficient-WAM-RT]
+  W --> A[16 × 14 absolute joint targets]
+  A --> P[Optional: clip gripper range before scoring]
+  O --> S[Safety head]
   P --> S
-  S --> G{整体风险低于阈值?}
-  G -->|是| E[take_action: 执行同一候选的前缀]
+  S --> G{Overall risk below threshold?}
+  G -->|yes| E[take_action: execute a prefix of the same candidate]
   E --> O
-  G -->|否| H[guard模式停止本回合]
+  G -->|no| H[guard mode: stop the episode]
 ```
 
-这里的“同时评估”是**每次生成候选后、发送到模拟器前同步评分**，之后再执行和重新观测。它不是拿旧画面在后台补打风险分数。
+Scoring is **synchronous**: every candidate is scored after it is generated and before any of its actions is
+sent to the simulator. The loop then executes, re-observes and repeats. Risk is never back-filled on stale
+frames.
 
-## 安装和资产
+## Installation
 
-在已安装 RoboTwin、SAPIEN、CuRobo 和适配CUDA版PyTorch的Linux环境中：
+Requirements: Linux, a CUDA-enabled PyTorch build, and an installed RoboTwin with SAPIEN and CuRobo.
+The validated RoboTwin commit is `c3ddfa8b97d5519efa828b075999bd0006778e5e`.
 
 ```bash
 git clone https://github.com/maxiaovivi/WAtcher.git
@@ -30,19 +49,27 @@ pip install -e '.[safety,wam,dev]'
 pytest -q
 ```
 
-RoboTwin及其资产需按项目本身的安装说明准备；本仓库不会自动安装驱动、下载模型或启动物理机器人。实测环境的RoboTwin版本为 `c3ddfa8b97d5519efa828b075999bd0006778e5e`。
+Extras: `safety` (safety head only, CPU is enough), `wam` (Efficient-WAM policy, needs CUDA), `dev` (tests).
+This repository does not install drivers, download models, or talk to physical robots. Prepare RoboTwin and
+its assets following the RoboTwin instructions.
 
-准备：
+### Assets
 
-- 官方完整 `Efficient-WAM-RT_stage3.pt`、匹配的RoboTwin `deploy_policy.yml`、WAN配置与VAE。
-- 对应任务指令的缓存文本嵌入；它必须与完整scene prefix及instruction一致。
-- 原 `06_offline/safety-offline.pt`，其受训练profile为 `robotwin_legacy_target14`。
+You need, locally:
 
-按 [资产配置示例](examples/wam_assets.example.json) 填写本地路径。相对路径从该JSON所在目录解析。详见 [策略资产说明](docs/efficient_wam_assets.md) 与 [仿真安全头说明](docs/simulation_safety.md)。
+- the official full `Efficient-WAM-RT_stage3.pt`, the matching RoboTwin `deploy_policy.yml`, the WAN config and
+  the VAE;
+- a cached text embedding for the task instruction, which must match the full scene prefix plus instruction;
+- the original `06_offline/safety-offline.pt`, trained for the profile `robotwin_legacy_target14`.
 
-## 跑真实仿真闭环
+Fill in local paths following [`examples/wam_assets.example.json`](examples/wam_assets.example.json); relative
+paths resolve from the JSON file's directory. See [policy assets](docs/efficient_wam_assets.md) and
+[simulation safety head](docs/simulation_safety.md) for details.
 
-下面指令必须与配置中的缓存文本一致；场景seed与指令中的物体描述也应匹配。
+## Running a closed-loop episode
+
+The instruction must match the cached text in the asset config, and the object descriptions in the
+instruction should match the scene seed.
 
 ```bash
 watcher-robotwin \
@@ -57,39 +84,50 @@ watcher-robotwin \
   --output-dir outputs/hanging_mug_guard_01
 ```
 
-默认保留任务的官方动作步数上限。`--max-actions` 可用于短程诊断，达到这个人为上限不算任务成功。`--execute-steps 4` 等设置会执行候选前缀后更早重新观测；完整16步候选仍先接受风险检查。
+By default the task's official action limit is kept. `--max-actions` is for short diagnostics only; hitting
+that artificial limit is not task success. Smaller `--execute-steps` (e.g. `4`) execute a shorter prefix and
+re-observe sooner; the full 16-step candidate is still risk-checked first.
 
-输出目录必须是新目录，包含小型 `risk_events.jsonl` 和 `summary.json`。记录包括每段风险、是否被拒绝、实际执行的模拟器动作数，以及原生 `task_success`。默认不保存录像或图像。
+`--output-dir` must be a new directory. It receives a compact `risk_events.jsonl` and a `summary.json` with
+per-chunk risk, whether the chunk was rejected, the number of simulator actions actually executed, and the
+native `task_success`. No video or images are saved by default.
 
-### 两种执行模式
+### Execution modes
 
-| 模式 | 行为 |
+| Mode | Behavior |
 |---|---|
-| `guard`（默认） | 风险达到阈值时停止回合，不执行被拒绝的候选 |
-| `monitor` | 仿真比较模式：完成有效评分后继续执行候选，包括高风险候选；日志保留REJECT和 `high_risk_executed_in_monitor` |
+| `guard` (default) | Stops the episode when risk reaches the threshold; the rejected candidate is not executed. |
+| `monitor` | Simulation-only comparison: after valid scoring, the candidate is executed even if high-risk. The log keeps `REJECT` and sets `high_risk_executed_in_monitor`. |
 
-两种模式遇到非法输入、NaN或推理错误都会停止。`monitor`用于在模拟器中观察预测与实际结果，不提供风险拦截。代码没有自动“向上抬升”或其它未经检查的回退动作。
+Both modes stop on invalid input, NaNs or inference errors. `monitor` is for comparing predictions with
+outcomes in simulation and provides no protection. There is no automatic "lift up" or any other unchecked
+fallback motion.
 
-### 夹爪范围处理
+### Gripper range
 
-RoboTwin原生 `set_gripper` 会限制到 `[0,1]`。为使被评分动作与实际接收动作一致，可显式使用 `--gripper-mode clip`：**先**处理第6、13列，再评分和执行同一候选，并记录修改数量。12个关节目标保持不变。默认 `strict` 会拒绝超界夹爪值。
+RoboTwin's native `set_gripper` clips to `[0, 1]`. To make the scored action identical to the executed one,
+pass `--gripper-mode clip`: columns 6 and 13 are clipped **first**, then the same candidate is scored and
+executed, and the number of modified values is logged. The 12 joint targets are never changed. The default
+`strict` mode rejects out-of-range gripper values.
 
-## 数据合同
+## Data contract
 
-| 项目 | 定义 |
+| Item | Definition |
 |---|---|
-| 相机 | 当前时刻的head、left、right三幅uint8 RGB；原生key为head_camera、left_camera、right_camera |
-| 策略图像 | 官方360×320三视角拼图，再padding至384×320；head原图240×320 |
-| 安全头图像 | 从同一原图独立做PIL BILINEAR至每相机128×128 |
-| 状态 | `get_obs()['joint_action']['vector']`，当前drive-target代理，不是实测qpos |
-| 候选动作 | `[16,14]`绝对关节目标；左臂6关节＋左夹爪＋右臂6关节＋右夹爪 |
-| 单位 | 关节rad；夹爪 **1=open、0=closed** |
-| 执行 | 原生 `take_action(target14, action_type='qpos')`，由TOPP决定插值和时长 |
-| 安全头时序 | 保留训练时的 `unknown_duration`，不虚构0.06秒固定动作间隔 |
+| Cameras | Current head, left and right uint8 RGB; native keys `head_camera`, `left_camera`, `right_camera` |
+| Policy images | Official 360×320 three-view mosaic, padded to 384×320; head image is 240×320 |
+| Safety-head images | Each original camera image resized independently to 128×128 with PIL BILINEAR |
+| State | `get_obs()['joint_action']['vector']`: the current drive-target proxy, not measured qpos |
+| Candidate | `[16, 14]` absolute joint targets: left arm 6 + left gripper + right arm 6 + right gripper |
+| Units | Joints in rad; gripper **1 = open, 0 = closed** |
+| Execution | Native `take_action(target14, action_type='qpos')`; TOPP decides interpolation and duration |
+| Safety-head timing | Keeps the training-time `unknown_duration`; no fixed 0.06 s action interval is assumed |
 
-策略使用官方checkpoint的qpos mean/std归一化和反归一化。安全头接收物理值，并按自己的原统计归一化一次。不可再对输入重复归一化，或把实际qpos、末端坐标、速度替代drive-target输入。
+The policy uses the qpos mean/std stored in the official checkpoint for normalization and de-normalization.
+The safety head takes physical values and normalizes them once with its own statistics. Do not normalize
+inputs twice, and do not substitute measured qpos, end-effector poses or velocities for the drive targets.
 
-## Python接口
+## Python API
 
 ```python
 from safe_wam import GuardedSimulationPolicy, run_episode
@@ -101,35 +139,61 @@ policy.reset(seed=17)
 head = SimulationSafetyHead('safety-offline.pt', device='cpu')
 controller = GuardedSimulationPolicy(head, policy, gripper_mode='clip')
 
-# task是已完成setup_demo并设置同一instruction的原生RoboTwin task。
+# `task` is a native RoboTwin task after setup_demo, with the same instruction set.
 result = run_episode(task, controller, instruction, execute_steps=16, mode='guard')
 print(result['status'], result['task_success'], result['risk_evaluations'])
 
-# 也可以只评分外部16×14绝对目标；此调用不执行模拟器。
+# Score an external 16x14 absolute-target candidate without running the simulator.
 decision = GuardedSimulationPolicy(head).evaluate(task.get_obs(), instruction, actions=targets)
 ```
 
-## 验证与限制
+## Validation and limitations
 
-实际检查结果见 [验证记录](docs/VALIDATION.md)：45项接口测试通过；原06安全头与新adapter的全部18个概率已做真实输入CPU等价核对，最大差0.0。
+See the [validation record](docs/VALIDATION.md): 45 interface tests pass, and all 18 probabilities of the
+original 06 safety head match the new adapter exactly (max difference 0.0) on a real input on CPU.
 
-已在真实RoboTwin `hanging_mug` 场景跑通两种模式：`guard`执行96个动作、评分7次后拦截高风险候选；`monitor`执行到官方900动作上限，持续评分57次。**这两回合均未完成挂杯任务**，目前验证的是执行、评分和拦截链路，不是任务成功率或危险识别准确率。
+Both modes were run end to end in a real RoboTwin `hanging_mug` scene. `guard` executed 96 actions and scored
+7 times before rejecting a high-risk candidate; `monitor` ran to the official 900-action limit with 57
+evaluations. **Neither episode completed the task.** This validates the execution, scoring and rejection path,
+not task success or hazard-detection accuracy.
 
-风险输出包括16个step、post及其整体最大值，不能丢弃post项。当前逐步风险时刻没有独立验证；固定chunk执行与原采样训练轨迹的时序也不能自动视为等价。`ALLOW`是模型预测，不是安全保证。
+The risk output has 16 per-step values, a `post` value and their overall maximum; `post` must not be dropped.
+Per-step risk timing has not been independently validated, and fixed-chunk execution is not automatically
+equivalent to the timing of the sampled training trajectories. `ALLOW` is a model prediction, not a safety
+guarantee.
 
-## 结构
+## 300-question benchmark
+
+The frozen Test300 benchmark (100 hazardous + 200 normal cases; 204 RoboTwin, 96 LIBERO) will be released on
+Hugging Face. It is intentionally not stored in this repository. It is an evaluation set only: do not train
+or tune on it.
+
+## Project page
+
+[`site/`](site/) is the static project page (plain HTML, no build step). Preview it locally with:
+
+```bash
+python3 -m http.server 8000 --directory site   # open http://localhost:8000/
+```
+
+## Repository layout
 
 ```text
 src/safe_wam/
-  simulation_policy.py     官方RoboTwin Efficient-WAM
-  simulation_safety.py     原06仿真安全头
-  simulation_pipeline.py   同一观测和候选的风险门控
-  simulation_loop.py       get_obs → score → take_action闭环
-  robotwin_env.py          独立进程中的原生任务初始化
-  robotwin_cli.py          可直接运行的入口
-  vendor/                 固定版本最小推理依赖
-src/safety_verify_wam/     原安全头数值实现
-tests/                    合同、门控、执行顺序和等价检查
+  simulation_policy.py     official RoboTwin Efficient-WAM policy
+  simulation_safety.py     original 06 simulation safety head
+  simulation_pipeline.py   risk gate on one observation and one candidate
+  simulation_loop.py       get_obs -> score -> take_action closed loop
+  robotwin_env.py          native task setup in an isolated process
+  robotwin_cli.py          `watcher-robotwin` entry point
+  vendor/                  pinned minimal inference dependencies
+src/safety_verify_wam/     numerical implementation of the original safety head
+tests/                     contract, gating, execution-order and equivalence checks
+docs/                      asset, safety-head and validation notes
+site/                      project page
 ```
 
-上游许可与来源见 [第三方说明](THIRD_PARTY_NOTICES.md)。
+## License
+
+See [LICENSE](LICENSE). Upstream licenses and provenance are listed in
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
