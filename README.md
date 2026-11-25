@@ -1,6 +1,6 @@
 <div align="center">
 
-## WAtcher: Watching Ahead for Safe Robotic Manipulation with Efficient World-Action Models
+## WAtcher: Watching Ahead for Safe Robotic Manipulation with Efficient WAM
 
 <!-- arXiv: replace "coming soon" with the paper ID and point the link to https://arxiv.org/abs/<ID> -->
 [![arXiv](https://img.shields.io/badge/arXiv-coming%20soon-b31b1b?logo=arxiv&logoColor=white)](#)
