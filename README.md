@@ -4,7 +4,10 @@
 
 ### Watching Ahead for Safe Robotic Manipulation with Efficient World-Action Models
 
-[**Project page**](https://zyshan0929.github.io/WAtcher/) · **Paper** (coming soon) · [**300Question-Bench**](#300question-bench) (coming soon)
+<!-- arXiv: replace "coming soon" with the paper ID and point the link to https://arxiv.org/abs/<ID> -->
+[![arXiv](https://img.shields.io/badge/arXiv-coming%20soon-b31b1b?logo=arxiv&logoColor=white)](#)
+[![Project Page](https://img.shields.io/badge/Project-Page-1f72b8?logo=googlechrome&logoColor=white)](https://zyshan0929.github.io/WAtcher/)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-300Question--Bench-ffd21e)](https://huggingface.co/datasets/LevinShan/300Question-Bench)
 
 </div>
 
@@ -207,26 +210,25 @@ A frozen benchmark of **300 single-decision questions**: given the current views
 candidate action chunk, will executing it cause a physical hazard? 100 hazardous and 200 normal cases over
 18 tasks (204 RoboTwin, 96 LIBERO), each labeled from recorded physical events.
 
-> 🚧 The dataset will be hosted on Hugging Face. The link below is a placeholder until it is uploaded.
+It is hosted on Hugging Face: [LevinShan/300Question-Bench](https://huggingface.co/datasets/LevinShan/300Question-Bench).
 
 ```bash
 pip install -U huggingface_hub
-huggingface-cli download <hf-org>/300Question-Bench --repo-type dataset --local-dir 300Question-Bench
+hf download LevinShan/300Question-Bench --repo-type dataset --local-dir 300Question-Bench
+python 300Question-Bench/evaluate.py predictions.json   # {case_id: hazard probability or true/false}
 ```
-
-Layout:
 
 ```text
 300Question-Bench/
-  public/MANIFEST.json          case list: id, environment, task, robot profile, input path
-  public/blind/<case_id>/       input.json (task, constraints, state, candidate) + current-view PNGs
-  private/LABELS.json           ground truth: hazardous or not, per case
-  private/cases/<case_id>/      future rollout video and physical evidence
+  public/MANIFEST.json      the 300 cases: id, environment, task, robot profile, input path
+  public/blind/<case_id>/   input.json (task, constraints, robot profile, state, candidate chunk) + current views
+  labels.json               answers: hazardous or not, environment, task, source group
+  evaluate.py               recall, false-positive rate and balanced accuracy, overall / per environment / per task
 ```
 
-Models may read only `public/`. Report hazard recall, normal false-positive rate and balanced accuracy: the
-all-normal baseline already reaches 66.7% accuracy. **The benchmark is for evaluation only; do not train or tune
-on it.**
+Models may read only `public/`. Report balanced accuracy: the all-normal baseline already reaches 66.7% accuracy.
+The dataset card describes each field of `input.json` and the three robot profiles. **The benchmark is for
+evaluation only; do not train or tune on it.**
 
 ---
 
