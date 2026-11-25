@@ -1,7 +1,15 @@
 # Sources and licenses
 
-- Efficient-WAM minimal inference runtime: [jiajun613/Efficient-WAM](https://github.com/jiajun613/Efficient-WAM), revision `2bd75a8c56acfcd5754b98c7ed313176911ccae0`. Apache-2.0 and WAN component license files are retained under `src/safe_wam/vendor/efficient_wam_runtime/`.
-- Safety numerical runtime: original user-supplied `06_offline` simulation export. Its Apache-2.0 license and provenance are retained under `src/safety_verify_wam/`.
-- RoboTwin is an external installation. Its simulator, task code and large assets are not vendored here; use its own installation instructions and licenses.
+- **Efficient-WAM inference runtime**, `src/watcher/vendor/efficient_wam/`: from
+  [jiajun613/Efficient-WAM](https://github.com/jiajun613/Efficient-WAM) at commit
+  `2bd75a8c56acfcd5754b98c7ed313176911ccae0` (`inference/robotwin/EfficientWAM`, including `deploy_policy.yml`),
+  Apache-2.0 (`LICENSE`), with the Wan2.2 modules under their license (`LICENSE-WAN`). Changes, marked
+  `WAtcher:` in the code: `model_loader.build_runtime_from_config` accepts `from_teacher=False` and a
+  `text_encoder` (the strict checkpoint load replaces every weight, and instructions are pre-encoded);
+  `CompactWANModel.allocate` builds the architecture without loading teacher weights; the T5 import is lazy;
+  the unused Wan2.1 VAE and benchmark entry points are removed.
+- **Safety head**, `src/watcher/safety.py`: re-implements the inference path of the 06 safety delivery
+  (`safety_verify_wam.portable`, Apache-2.0, by the WAtcher authors) with the same parameter names.
+- **RoboTwin 2.0** is an external installation and is not vendored; it keeps its own license.
 
-Model weights, data, private experiment logs and credentials are excluded. Python dependencies and external model assets retain their respective terms.
+Model weights, datasets and the 300Question-Bench are not part of this repository.

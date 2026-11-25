@@ -18,7 +18,7 @@ dist/
 *.mp4
 *.tar*
 weights/
-data/
+/data/
 outputs/
 *.local.json
 
@@ -33,3 +33,9 @@ WAtcher_Test300_*/
 
 # Project page media is tracked
 !site/**/*.mp4
+
+# Local runtime: assets, extracted RoboTwin, venv, scratch
+assets/
+.work/
+.venv/
+!tests/data/*.pt

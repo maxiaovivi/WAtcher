@@ -37,20 +37,22 @@ RoboTwin. Linux and CUDA GPUs are required for both; the safety head alone runs 
 
 ### 1.1 Simulation / inference environment
 
-1. Install [RoboTwin 2.0](https://github.com/RoboTwin-Platform/RoboTwin) with SAPIEN and CuRobo, following its
-   instructions, and download its assets. WAtcher was validated with RoboTwin commit
-   `c3ddfa8b97d5519efa828b075999bd0006778e5e` and the dual `aloha-agilex` embodiment.
-2. In the same Python environment (Python ≥ 3.10, CUDA-enabled PyTorch ≥ 2.4), install WAtcher:
+1. Install [RoboTwin 2.0](https://github.com/RoboTwin-Platform/RoboTwin) with SAPIEN 3.0.3 and CuRobo, following
+   its instructions, and download its assets. WAtcher is validated at RoboTwin commit
+   `c3ddfa8b97d5519efa828b075999bd0006778e5e` (`git checkout c3ddfa8`) with the dual `aloha-agilex` embodiment.
+2. Install WAtcher into a `.venv` layered on that environment (the RoboTwin environment itself is not changed),
+   then download the official policy checkpoint:
 
 ```bash
 git clone https://github.com/maxiaovivi/WAtcher.git
 cd WAtcher
-pip install -e '.[safety,wam,dev]'
-pytest -q          # interface tests; no GPU, simulator or weights needed
+scripts/setup_env.sh /path/to/robotwin/conda/env   # or: pip install -e '.[wam,text,dev]' inside it
+.venv/bin/python -m pytest -q                      # 49 tests; no GPU, simulator or weights needed
+scripts/download_assets.sh                         # Efficient-WAM-RT_stage3.pt (2 GB), sha256-checked
 ```
 
-Extras: `safety` (safety head), `wam` (Efficient-WAM policy), `dev` (tests). Nothing here downloads weights or
-talks to a physical robot.
+Extras: `wam` (Efficient-WAM policy), `text` (only for `scripts/make_text_cache.py`), `dev` (tests).
+Nothing here talks to a physical robot.
 
 ### 1.2 Training environment
 
@@ -100,29 +102,19 @@ Set `compact_wan_checkpoint` (stage 1 output) and `action_init_checkpoint` (stag
 `model` and `config`: this is the `checkpoint` WAtcher loads. The model must keep the official contract
 (14-D state/action, 16-action chunks, 384×320 input mosaic); WAtcher refuses any other shape.
 
-**Text cache.** WAtcher never runs the 5B text encoder at run time. Precompute the UMT5 embedding of each task
-instruction once, from the Efficient-WAM checkout:
+**Text cache.** WAtcher does not run the text encoder online. Encode each task instruction once (GPU, from the
+WAtcher folder; it reads `models_t5_umt5-xxl-enc-bf16.pth` and `google/umt5-xxl` from the Wan2.2 folder):
 
 ```bash
-python /path/to/WAtcher/scripts/make_text_cache.py \
-  --wan-root /path/to/Wan2.2-TI2V-5B \
+.venv/bin/python scripts/make_text_cache.py --wan-root /path/to/Wan2.2-TI2V-5B \
   --instruction 'Grab the beige mug, turn it, set it on the table, then hang it on the medium-sized rack.' \
-  --output /path/to/assets/text/hanging_mug.pt
+  --output assets/text/hanging_mug.pt
 ```
 
-**Asset file.** Point WAtcher at your weights by copying
-[`examples/wam_assets.example.json`](examples/wam_assets.example.json) to e.g. `robotwin_assets.local.json`
-(relative paths resolve from the JSON's directory):
-
-| Key | Value |
-|---|---|
-| `checkpoint` | Stage 3 export (or the official `Efficient-WAM-RT_stage3.pt`) |
-| `deploy_config` | `inference/robotwin/EfficientWAM/deploy_policy.yml` from Efficient-WAM |
-| `wan_directory` | Directory with Wan2.2 `config.json` and `Wan2.2_VAE.pth` |
-| `text_embeddings` | The cache built above |
-| `instruction` | Exactly the instruction in that cache |
-
-See [docs/efficient_wam_assets.md](docs/efficient_wam_assets.md) for the full policy contract.
+**Asset file.** Copy [`examples/assets.example.json`](examples/assets.example.json) to `assets/assets.json` and
+set `checkpoint` (your stage-3 export or the official `Efficient-WAM-RT_stage3.pt`), `wan_directory` (needs
+only `config.json` and `Wan2.2_VAE.pth`) and `text_embeddings`. Relative paths resolve from the JSON's folder.
+The official RoboTwin deploy config is bundled. Details: [docs/contracts.md](docs/contracts.md).
 
 ---
 
@@ -139,25 +131,27 @@ The release will cover:
 2. **Training.** Train Safe-Guard (1.7M parameters) on views, state, candidate commands and imagined frames.
 3. **Evaluation.** Blind set and [300Question-Bench](#300question-bench).
 
-How the current head reads its inputs and the checkpoint contract it must satisfy are documented in
-[docs/simulation_safety.md](docs/simulation_safety.md).
+The inputs of the current head and the checkpoint format it loads are documented in
+[docs/contracts.md](docs/contracts.md). Without a trained checkpoint, `scripts/make_random_safety_head.py`
+writes a random head in that format, to smoke-test the pipeline (its risk scores are meaningless).
 
 ---
 
 ## 4. Run WAtcher in RoboTwin
 
+On a GPU node (one GPU, about 15 GB; a 900-action episode takes about 2 minutes on an H100):
+
 ```bash
-watcher-robotwin \
-  --robotwin-root /path/to/RoboTwin \
-  --task hanging_mug --setting randomized --seed 100033 \
-  --policy-seed 310100033 \
-  --policy-config /path/to/robotwin_assets.local.json \
+scripts/run_robotwin.sh \
+  --robotwin-root /path/to/RoboTwin --assets assets/assets.json \
   --safety-checkpoint /path/to/06_offline/safety-offline.pt \
-  --instruction 'Grab the beige mug, turn it, set it on the table, then hang it on the medium-sized rack.' \
-  --device cuda:0 --safety-device cpu \
-  --execute-steps 16 --mode guard --gripper-mode clip \
-  --output-dir outputs/hanging_mug_guard_01
+  --task hanging_mug --setting randomized --seed 100033 --policy-seed 310100033 \
+  --mode guard --output-dir outputs/hanging_mug_guard
 ```
+
+On Slurm, submit the same script: `sbatch --account=<account> --partition=<gpu partition> scripts/run_robotwin.sh
+<same arguments>` (one GPU, 1 h by default). The script sets up the NVIDIA Vulkan/EGL files SAPIEN needs and
+runs `watcher-robotwin` from `.venv`. The instruction defaults to the one in the text cache.
 
 Each loop iteration observes, generates a 16×14 candidate, scores it, and only then executes a prefix of it:
 
@@ -175,32 +169,34 @@ flowchart LR
 | Option | Meaning |
 |---|---|
 | `--mode guard` | Default. Stop when risk reaches the threshold; the rejected chunk is not executed. |
-| `--mode monitor` | Simulation-only comparison: execute even high-risk chunks, logged as `high_risk_executed_in_monitor`. No protection. |
+| `--mode monitor` | Simulation-only comparison: execute rejected chunks too, logged with `high_risk_executed`. No protection. |
 | `--execute-steps N` | Execute the first `N` (1–16) actions, then re-observe. The full chunk is always scored first. |
-| `--gripper-mode clip` | Clip gripper columns 6 and 13 to `[0,1]` *before* scoring, so the scored and executed actions are identical. `strict` (default) rejects out-of-range values. |
+| `--gripper-mode clip` | Default. Clip the two gripper columns to `[0,1]` *before* scoring, so the scored and executed actions are identical. `strict` rejects out-of-range values. |
 | `--max-actions N` | Short diagnostic runs only; reaching it is not task success. |
 
-The instruction must match the text cache exactly. `--output-dir` must be new; it receives
-`risk_events.jsonl` (per-chunk risk, decision, executed actions) and `summary.json` (including native
-`task_success`). Invalid inputs, NaNs and inference errors always stop the episode.
+`--output-dir` must be new; it receives `risk_events.jsonl` (per-chunk risks, decision, executed actions) and
+`summary.json` (status, native `task_success`, actions, chunks). Invalid inputs, NaNs and model errors stop the
+episode in both modes.
 
 **Python API**
 
 ```python
-from safe_wam import GuardedSimulationPolicy, run_episode
-from safe_wam.simulation_policy import SimulationEfficientWAMPolicy
-from safe_wam.simulation_safety import SimulationSafetyHead
+from watcher import Gate, run_episode
+from watcher.policy import EfficientWAMPolicy
+from watcher.robotwin import create_task
+from watcher.safety import SafetyHead
 
-policy = SimulationEfficientWAMPolicy('robotwin_assets.local.json', device='cuda:0')
-head = SimulationSafetyHead('safety-offline.pt', device='cpu')
-controller = GuardedSimulationPolicy(head, policy, gripper_mode='clip')
+policy = EfficientWAMPolicy('assets/assets.json', device='cuda:0', seed=0)
+gate = Gate(SafetyHead('safety-offline.pt'), policy)
+task = create_task('/path/to/RoboTwin', 'hanging_mug', setting='randomized', seed=100033,
+                   instruction=policy.instruction)
+result = run_episode(task, gate, policy.instruction, mode='guard')
 
-result = run_episode(task, controller, instruction, execute_steps=16, mode='guard')  # native RoboTwin task
-decision = GuardedSimulationPolicy(head).evaluate(task.get_obs(), instruction, actions=targets)  # score only
+decision = Gate(SafetyHead('safety-offline.pt')).evaluate(task.get_obs(), policy.instruction, actions=targets)
+print(decision.status, decision.risk.overall)  # score your own [16, 14] chunk without executing it
 ```
 
-Input conventions (cameras, units, normalization) are listed in [docs/simulation_safety.md](docs/simulation_safety.md)
-and [docs/efficient_wam_assets.md](docs/efficient_wam_assets.md); the validated runs are recorded in
+Conventions (cameras, units, timing, checkpoint format): [docs/contracts.md](docs/contracts.md). Validated runs:
 [docs/VALIDATION.md](docs/VALIDATION.md). `ALLOW` is a model prediction, not a safety guarantee.
 
 ---
@@ -237,19 +233,19 @@ on it.**
 ## Repository layout
 
 ```text
-src/safe_wam/
-  simulation_policy.py     Efficient-WAM-RT policy (lazy, cached text, 16×14 targets)
-  simulation_safety.py     simulation safety head
-  simulation_pipeline.py   risk gate: one observation, one candidate, one decision
-  simulation_loop.py       get_obs → score → take_action loop
-  robotwin_env.py          native RoboTwin task setup
-  robotwin_cli.py          `watcher-robotwin` entry point
-  vendor/                  pinned Efficient-WAM inference runtime
-src/safety_verify_wam/     safety-head model implementation
-scripts/make_text_cache.py instruction embedding cache
-tests/                     contract, gating and execution-order tests
-docs/                      policy, safety-head and validation notes
-site/                      project page (static HTML)
+src/watcher/
+  contracts.py        observation/action conventions and checks
+  policy.py           Efficient-WAM-RT policy (cached instruction, 16×14 joint targets)
+  safety.py           safety head and its RiskModel
+  gate.py             one observation + one candidate -> ALLOW / REJECT / ERROR
+  loop.py             observe -> score -> execute loop (guard / monitor)
+  robotwin.py         RoboTwin task setup
+  cli.py              `watcher-robotwin`
+  vendor/efficient_wam/  Efficient-WAM inference runtime (pinned, see THIRD_PARTY_NOTICES.md)
+scripts/              setup_env.sh, download_assets.sh, run_robotwin.sh, make_text_cache.py, make_random_safety_head.py
+tests/                unit tests and the safety-head regression fixture
+docs/                 contracts and validation records
+site/                 project page (static HTML)
 ```
 
 ## Citation

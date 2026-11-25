@@ -1,22 +1,31 @@
-# RoboTwin validation
+# Validation
 
-This record concerns the RoboTwin-only implementation. It separates numerical equivalence, interface tests, actual simulator execution, task success, and safety-model quality.
+## 2026-11-24: refactored `watcher` package, NVIDIA H100 (Slurm node)
 
-- Original 06 safety-head CPU equivalence: all 18 probabilities match exactly on one existing real RoboTwin input. See [receipt](simulation_safety_cpu_check.json).
-- RoboTwin contracts, policy adapter, risk gate and execution-loop tests: 45 passed.
-- Installed `watcher-robotwin` console entry point: `--help` passed.
+Environment: RoboTwin 2.0 at `c3ddfa8`, SAPIEN 3.0.3, torch 2.10.0+cu128, official
+`Efficient-WAM-RT_stage3.pt` (sha256 `209ab4d6...40f`), Wan2.2-TI2V-5B VAE and UMT5 encoder.
 
-## Actual simulator integration (2026-11-08, Asia/Singapore)
+- **Unit tests:** 49 passed (`pytest -q`, CPU and GPU node).
+- **Safety head equals the original 06 implementation.** Random weights in the 06 checkpoint format, scored by
+  the original `safety_verify_wam` code and by `watcher.safety`: maximum absolute difference **0** over
+  3 model configurations (single profile; three profiles with profile-specific heads and coarse/chunk visual
+  context; no motion encoder) x 6 observations (16 step risks, post and overall each). Two small configurations
+  are kept as a regression fixture in `tests/data/safety_reference.pt`.
+- **Closed loop in RoboTwin.** `hanging_mug`, randomized, scene seed 100033, policy seed 310100033, the validated
+  instruction, gripper clipping on. The safety head had **random weights** (the trained 06 checkpoint is not
+  on this server), so these runs check execution, scoring and rejection, not hazard detection.
 
-Two episodes used the same `hanging_mug` randomized scene (seed 100033), instruction and policy seed (310100033). The official task horizon remained 900 actions. Each candidate contained 16 absolute 14D targets; gripper clipping was explicitly enabled before scoring. Policy inference ran on one NVIDIA L40S, with the original 06 safety head on CPU at its 0.5 threshold.
+| Run | Threshold | Result | Actions | Scored chunks | Time |
+|---|---:|---|---:|---:|---:|
+| guard | 0.5 | all chunks allowed (risk 0.383-0.475), task horizon reached | 900 | 57 | 141 s |
+| monitor | 0.5 | identical risks to the guard run (reproducible seeds) | 900 | 57 | 123 s |
+| guard | 0.42 | chunk 4 scored 0.433 and was rejected; none of its actions ran | 64 | 5 | 64 s |
 
-| Mode | Executed actions | Risk evaluations | Outcome | Native task success |
-|---|---:|---:|---|---|
-| `guard` | 96 | 7 | Six ALLOW chunks executed. The seventh scored 0.999756 and was rejected; none of its actions executed. | false |
-| `monitor` | 900 | 57 | Reached the official horizon; 26 ALLOW and 31 REJECT decisions. The comparison mode executed 484 actions from rejected chunks, explicitly logged as high risk. | false |
+The task was not completed in either full-length run (the same outcome as the 2026-11-08 runs below).
 
-Both processes exited, and all risk values were finite. The integration establishes actual policy execution, repeated observation and scoring, and pre-execution rejection in guard mode. **Neither episode completed the task.** This is a functional integration check on one scene, not a task-success benchmark or hazard-detection accuracy measurement. The risk classifications were not independently labeled as correct or incorrect.
+## 2026-11-08: original 06 checkpoint, NVIDIA L40S
 
-Seeds, dependency versions, settings and compact outcomes are in the [integration receipt](robotwin_integration_check.json). Full local logs remain outside the repository. No threshold tuning, scene replacement or success-condition changes were used to obtain these results.
-
-No physical robot commands are sent. An explicit `clip` setting changes only out-of-range gripper targets before scoring; the default strict mode rejects them. Monitor-mode execution of a high-risk candidate is logged as such and is never described as an allowing safety decision.
+With the trained `06_offline/safety-offline.pt` (threshold 0.5) on the same scene: `guard` executed 96 actions
+and rejected the 7th chunk (risk 0.9998); `monitor` ran all 900 actions with 26 ALLOW and 31 REJECT decisions.
+Neither episode completed the task. The new adapter matched the original 06 scores exactly on a recorded
+RoboTwin input. Receipts: [validation/](validation/).

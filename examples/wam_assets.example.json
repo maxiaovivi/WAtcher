@@ -1,9 +1,0 @@
-{
-  "schema": "safe_wam_robotwin_assets/v1",
-  "checkpoint": "../assets/Efficient-WAM-RT_stage3.pt",
-  "deploy_config": "../assets/robotwin/deploy_policy.yml",
-  "wan_directory": "../assets/Wan2.2-TI2V-5B",
-  "text_embeddings": "../assets/text/hanging_mug.pt",
-  "instruction": "Grab the beige mug, turn it, set it on the table, then hang it on the medium-sized rack.",
-  "seed": 0
-}

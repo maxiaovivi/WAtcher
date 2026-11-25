@@ -4,26 +4,27 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "watcher-robot"
-version = "0.2.0"
-description = "RoboTwin task execution with Efficient-WAM and pre-action safety scoring"
+version = "0.3.0"
+description = "Official repo for the paper \"WAtcher: Watching Ahead for Safe Robotic Manipulation with Efficient World-Action Models\""
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.24", "Pillow>=9.4"]
+# RoboTwin (SAPIEN, CuRobo, mplib, OpenCV) is installed separately, following its own instructions.
+dependencies = ["numpy>=1.24", "Pillow>=9.4", "PyYAML>=6", "torch>=2.4"]
 
 [project.optional-dependencies]
-safety = ["torch>=2.4"]
-wam = ["torch>=2.4", "av>=12", "opencv-python-headless>=4.8", "PyYAML>=6", "einops>=0.7", "safetensors>=0.4", "transformers>=4.45", "diffusers>=0.30", "ftfy>=6", "regex"]
+wam = ["diffusers>=0.30", "einops>=0.7", "safetensors>=0.4"]  # Efficient-WAM policy
+text = ["transformers>=4.45", "ftfy>=6", "regex"]  # scripts/make_text_cache.py only
 dev = ["pytest>=7"]
 
 [project.scripts]
-watcher-robotwin = "safe_wam.robotwin_cli:main"
+watcher-robotwin = "watcher.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml", "*.json", "LICENSE*", "NOTICE*", "PROVENANCE*"]
+"watcher.vendor.efficient_wam" = ["deploy_policy.yml", "LICENSE*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
