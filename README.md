@@ -1,8 +1,6 @@
 <div align="center">
 
-# WAtcher
-
-### Watching Ahead for Safe Robotic Manipulation with Efficient World-Action Models
+## WAtcher: Watching Ahead for Safe Robotic Manipulation with Efficient World-Action Models
 
 <!-- arXiv: replace "coming soon" with the paper ID and point the link to https://arxiv.org/abs/<ID> -->
 [![arXiv](https://img.shields.io/badge/arXiv-coming%20soon-b31b1b?logo=arxiv&logoColor=white)](#)
@@ -16,7 +14,7 @@
 WAtcher lets a world-action model (WAM) **check every candidate action chunk before it is executed**. The WAM
 proposes a chunk; a lightweight, detachable **Safe-Guard** scores it; risky chunks never reach the robot.
 
-## Contents
+### Contents
 
 1. [Installation](#1-installation)
 2. [Train the WAM](#2-train-the-wam)
@@ -33,12 +31,12 @@ proposes a chunk; a lightweight, detachable **Safe-Guard** scores it; risky chun
 
 ---
 
-## 1. Installation
+### 1. Installation
 
 WAtcher uses two environments: one to **train** the WAM (Efficient-WAM's) and one to **run** WAtcher in
 RoboTwin. Linux and CUDA GPUs are required for both; the safety head alone runs on CPU.
 
-### 1.1 Simulation / inference environment
+#### 1.1 Simulation / inference environment
 
 1. Install [RoboTwin 2.0](https://github.com/RoboTwin-Platform/RoboTwin) with SAPIEN 3.0.3 and CuRobo, following
    its instructions, and download its assets. WAtcher is validated at RoboTwin commit
@@ -57,7 +55,7 @@ scripts/download_assets.sh                         # Efficient-WAM-RT_stage3.pt 
 Extras: `wam` (Efficient-WAM policy), `text` (only for `scripts/make_text_cache.py`), `dev` (tests).
 Nothing here talks to a physical robot.
 
-### 1.2 Training environment
+#### 1.2 Training environment
 
 The WAM is trained with the official [Efficient-WAM](https://github.com/jiajun613/Efficient-WAM) code. WAtcher's
 vendored inference runtime is taken from commit `2bd75a8c56acfcd5754b98c7ed313176911ccae0`; use that commit so
@@ -76,7 +74,7 @@ encoder).
 
 ---
 
-## 2. Train the WAM
+### 2. Train the WAM
 
 WAtcher's policy is the unchanged 14-D Efficient-WAM-RT model. Run these commands inside the Efficient-WAM
 checkout from [§1.2](#12-training-environment). First replace the placeholder paths in `configs/robotwin/*.yaml`
@@ -121,7 +119,7 @@ The official RoboTwin deploy config is bundled. Details: [docs/contracts.md](doc
 
 ---
 
-## 3. Train Safe-Guard
+### 3. Train Safe-Guard
 
 > 🚧 **Coming soon.** The Safe-Guard training code and the hazard dataset (~25k physically labeled candidate
 > windows from RoboTwin, LIBERO and a UR7e) will be released here. Until then, WAtcher runs with the original
@@ -140,7 +138,7 @@ writes a random head in that format, to smoke-test the pipeline (its risk scores
 
 ---
 
-## 4. Run WAtcher in RoboTwin
+### 4. Run WAtcher in RoboTwin
 
 On a GPU node (one GPU, about 15 GB; a 900-action episode takes about 2 minutes on an H100):
 
@@ -204,7 +202,7 @@ Conventions (cameras, units, timing, checkpoint format): [docs/contracts.md](doc
 
 ---
 
-## 300Question-Bench
+### 300Question-Bench
 
 A frozen benchmark of **300 single-decision questions**: given the current views, robot state, task and one
 candidate action chunk, will executing it cause a physical hazard? 100 hazardous and 200 normal cases over
@@ -232,7 +230,7 @@ evaluation only; do not train or tune on it.**
 
 ---
 
-## Repository layout
+### Repository layout
 
 ```text
 src/watcher/
@@ -250,7 +248,7 @@ docs/                 contracts and validation records
 site/                 project page (static HTML)
 ```
 
-## Citation
+### Citation
 
 ```bibtex
 @misc{shan2026watcher,
@@ -263,7 +261,7 @@ site/                 project page (static HTML)
 }
 ```
 
-## License
+### License
 
 See [LICENSE](LICENSE). WAtcher builds on [Efficient-WAM](https://github.com/jiajun613/Efficient-WAM) and
 [Wan2.2](https://github.com/Wan-Video/Wan2.2); upstream licenses are listed in
