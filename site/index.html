@@ -15,8 +15,10 @@
   <meta property="og:image" content="https://zyshan0929.github.io/WAtcher/assets/images/og-teaser.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <script>
-    /* apply a saved theme before first paint */
-    try { var t = localStorage.getItem('watcher-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+    /* apply the saved theme before first paint; dark by default */
+    var t = 'dark';
+    try { var s = localStorage.getItem('watcher-theme'); if (s === 'light' || s === 'dark') t = s; } catch (e) {}
+    document.documentElement.dataset.theme = t;
   </script>
 </head>
 <body>
