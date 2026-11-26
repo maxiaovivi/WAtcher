@@ -2,8 +2,7 @@
 
 ## WAtcher: Watching Ahead for Safe Robotic Manipulation with Efficient WAM
 
-<!-- arXiv: replace "coming soon" with the paper ID and point the link to https://arxiv.org/abs/<ID> -->
-[![arXiv](https://img.shields.io/badge/arXiv-coming%20soon-b31b1b?logo=arxiv&logoColor=white)](#)
+[![arXiv](https://img.shields.io/badge/arXiv-2611.34124-b31b1b?logo=arxiv&logoColor=white)](https://arxiv.org/abs/2611.34124)
 [![Project Page](https://img.shields.io/badge/Project-Page-1f72b8?logo=googlechrome&logoColor=white)](https://zyshan0929.github.io/WAtcher/)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-300Question--Bench-ffd21e)](https://huggingface.co/datasets/LevinShan/300Question-Bench)
 
